@@ -211,14 +211,14 @@ library
                        DeriveFunctor, DeriveTraversable,
                        UndecidableInstances
 
-  build-depends:       base >=4.6 && <5
-                     , mtl >=2.1 && <2.3
-                     , mmorph >=1.0 && <1.1
-                     , transformers >=0.4 && <0.6
+  build-depends:       base >=4.6
+                     , mtl >=2.1
+                     , mmorph >=1.0
+                     , transformers >=0.4
                      , transformers-base < 0.5
-                     , resourcet > 1.1.0 && < 1.2
-                     , exceptions > 0.5 && < 0.9
-                     , monad-control >=0.3.1 && <1.1
+                     , resourcet > 1.1.0
+                     , exceptions > 0.5
+                     , monad-control >=0.3.1
                      , time
                      , ghc-prim
                      , containers
