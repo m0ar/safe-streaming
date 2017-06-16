@@ -4,11 +4,12 @@
 module Control.Monad.LMonad (
     LMonad,
     (>>=), (>>),
-    return 
+    return, fail
 ) where
 
-import Control.Applicative (Applicative, pure)
+import Control.Applicative (Applicative(), pure)
 import Data.Linear (const)
+import GHC.Base (String())
 
 class Applicative m => LMonad m where
     (>>=) :: m a ⊸ (a ⊸ m b) ⊸ m b
@@ -19,3 +20,5 @@ class Applicative m => LMonad m where
 
     return :: a ⊸ m a
     return = pure
+
+    fail :: String -> m a
