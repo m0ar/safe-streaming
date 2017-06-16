@@ -1,9 +1,12 @@
 {-# LANGUAGE Trustworthy #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
-module Control.Monad.LMonad where
+module Control.Monad.LMonad (
+    LMonad,
+    (>>=), (>>),
+    return 
+) where
 
-import Control.Monad (Monad, (>>=), return)
 import Control.Applicative (Applicative, pure)
 import Data.Linear (const)
 
@@ -16,7 +19,3 @@ class Applicative m => LMonad m where
 
     return :: a ⊸ m a
     return = pure
-
-instance Monad (LMonad a) where
-    (>>=) = (>>=)
-    return = return
