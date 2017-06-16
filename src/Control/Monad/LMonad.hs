@@ -11,6 +11,8 @@ import Control.Applicative (Applicative(), pure)
 import Data.Linear (const)
 import GHC.Base (String())
 
+infixl 1 >>, >>=
+
 class Applicative m => LMonad m where
     (>>=) :: m a ⊸ (a ⊸ m b) ⊸ m b
     

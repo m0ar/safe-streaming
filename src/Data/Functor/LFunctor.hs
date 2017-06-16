@@ -10,6 +10,8 @@ class LFunctor f where
     fmap :: (a ⊸ b) ⊸ f a ⊸ f b
     (<$) :: a -> f b ⊸ f a
 
+infixl 4 <$>
+
 (<$>) :: LFunctor f => (a ⊸ b) ⊸ f a ⊸ f b
 (<$>) = fmap
 
