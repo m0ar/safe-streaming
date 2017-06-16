@@ -37,7 +37,7 @@ where
 In the `Streaming.Prelude` library, which mimics the Haskell prelude's list API, the less general type 
 
 {% highlight haskell %}
-Data Of a r = !a :> r
+data Of a r = !a :> r
 {% endhighlight %}
 
 is used for `f`. This means that the stream models a left-strict pair of some `a` (probably a functor) followed by the "end of stream" type value. The reason for this less general type is that it allows an API closely related to Haskell lists, pipes, conduit, and io-streams. However, to be able to express nested streams the more general `f` is needed as a base type. This is very useful for defining things like chunking and concatenation of such streams.
