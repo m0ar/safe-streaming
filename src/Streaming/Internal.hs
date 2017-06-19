@@ -1,6 +1,7 @@
 {-# LANGUAGE RankNTypes, StandaloneDeriving,DeriveDataTypeable, BangPatterns #-}
 {-# LANGUAGE UndecidableInstances, CPP, FlexibleInstances, MultiParamTypeClasses  #-}
 {-#LANGUAGE Trustworthy, ScopedTypeVariables, GADTs #-}
+{-# LANGUAGE RebindableSyntax #-}
 module Streaming.Internal (
     -- * The free monad transformer
     -- $stream
@@ -76,7 +77,9 @@ module Streaming.Internal (
   
    ) where
 
-import Control.Monad
+import Control.Monad hiding ((>>), (>>=), return, fmap, void, fail)
+import Control.Monad.LMonad
+import Data.Functor.LFunctor
 import Control.Monad.Trans
 import Control.Monad.Trans.Class
 import Control.Monad.Reader.Class
@@ -91,7 +94,7 @@ import Control.Monad.Morph
 import Data.Monoid (Monoid (..), (<>))
 import Data.Functor.Identity
 import Data.Data ( Data, Typeable )
-import Prelude hiding (splitAt)
+import Prelude hiding (splitAt, (>>), (>>=), return, fmap, fail)
 import Data.Functor.Compose
 import Data.Functor.Sum
 import Control.Concurrent (threadDelay)
@@ -136,7 +139,8 @@ deriving instance (Eq r, Eq (m (Stream f m r))
 deriving instance (Typeable f, Typeable m, Data r, Data (m (Stream f m r))
                   , Data (f (Stream f m r))) => Data (Stream f m r)
 #endif
-instance (Functor f, Monad m) => Functor (Stream f m) where
+
+instance (LFunctor f, LMonad m) => LFunctor (Stream f m) where
   fmap f = loop where
     loop stream = case stream of
       Return r -> Return (f r)
@@ -150,20 +154,20 @@ instance (Functor f, Monad m) => Functor (Stream f m) where
       Step f    -> Step (fmap loop f)
   {-# INLINABLE (<$) #-}  
 
-instance (Functor f, Monad m) => Monad (Stream f m) where
+instance (LFunctor f, LMonad m) => LMonad (Stream f m) where
   return = Return
   {-# INLINE return #-}
   stream1 >> stream2 = loop stream1 where
+    loop :: Stream f m r ⊸ Stream f m b
     loop stream = case stream of
       Return _ -> stream2
-      Effect m  -> Effect (liftM loop m)
+      Effect m  -> Effect (fmap loop m)
       Step f   -> Step (fmap loop f)  
   {-# INLINABLE (>>) #-}
   -- (>>=) = _bind
   -- {-#INLINE (>>=) #-}
   --
-  stream >>= f =
-    loop stream where
+  stream >>= f = loop stream where
     loop stream0 = case stream0 of
       Step fstr -> Step (fmap loop fstr)
       Effect m   -> Effect (liftM loop m)
