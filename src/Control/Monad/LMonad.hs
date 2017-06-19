@@ -13,7 +13,7 @@ import GHC.Base (String())
 
 infixl 1 >>, >>=
 
-class Applicative m => LMonad m where
+class LMonad m where
     (>>=) :: m a ⊸ (a ⊸ m b) ⊸ m b
     
     (>>) :: m () ⊸ m b ⊸ m b
@@ -21,6 +21,5 @@ class Applicative m => LMonad m where
     {-# INLINE (>>) #-}
 
     return :: a ⊸ m a
-    return = pure
 
     fail :: String -> m a
