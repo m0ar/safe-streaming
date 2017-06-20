@@ -4,21 +4,20 @@
 -- | A linear version of a Functor
 module Data.Functor.LFunctor where
 
-import Prelude (flip)
+import Data.Linear (flip)
 
 class LFunctor f where
-    fmap :: (a ⊸ b) ⊸ f a ⊸ f b
-    (<$) :: a -> f b ⊸ f a
+  fmap :: (a ⊸ b) -> f a ⊸ f b
+  (<$) :: a -> f () ⊸ f a
 
-infixl 4 <$>
-
-(<$>) :: LFunctor f => (a ⊸ b) ⊸ f a ⊸ f b
+(<$>) :: LFunctor f => (a ⊸ b) -> f a ⊸ f b
 (<$>) = fmap
 
-infixl 4 $>
-
-($>) :: LFunctor f => f a ⊸ b -> f b
+($>) :: LFunctor f => f () ⊸ a -> f a
 ($>) = flip (<$)
+ 
+infixl 4 $>
+infixl 4 <$
+infixl 4 <$>
 
-void :: LFunctor f => f a -> f ()
-void x = () <$ x
+
