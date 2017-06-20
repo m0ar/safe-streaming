@@ -3,5 +3,9 @@
 
 module Data.Linear where
 
-const :: a ⊸ b -> a
-const a _ = a
+liftUnit :: a ⊸ () ⊸ a
+liftUnit a () = a 
+
+flip :: (a ⊸ b ⊸ c ) ⊸ b ⊸ a ⊸ c
+flip f b a = f a b
+
