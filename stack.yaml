@@ -25,7 +25,7 @@ docker:
   # GHC 8.1 
   #  image: parfunc/linear-types:0.0.2
   # GHC 8.2.X rebase
-  image: parfunc/linear-types:0.1.1
+  image: tweag/linear-types:0.1.2
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
