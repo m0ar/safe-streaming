@@ -1,7 +1,7 @@
 {-# LANGUAGE RankNTypes, StandaloneDeriving,DeriveDataTypeable, BangPatterns #-}
 {-# LANGUAGE UndecidableInstances, CPP, FlexibleInstances, MultiParamTypeClasses  #-}
-{-#LANGUAGE Trustworthy, ScopedTypeVariables, GADTs #-}
-{-# LANGUAGE RebindableSyntax #-}
+{-# LANGUAGE Trustworthy, ScopedTypeVariables, GADTs #-}
+{-# LANGUAGE RebindableSyntax, PartialTypeSignatures #-}
 module Streaming.Internal (
     -- * The free monad transformer
     -- $stream
@@ -104,6 +104,7 @@ import Control.Monad.Catch hiding (bracket, onException)
 import Control.Monad.Trans.Control
 import Data.Functor.Of
 import Data.IORef
+import Data.Linear (liftUnit)
 {- $stream
 
     The 'Stream' data type is equivalent to @FreeT@ and can represent any effectful
@@ -142,36 +143,31 @@ deriving instance (Typeable f, Typeable m, Data r, Data (m (Stream f m r))
 
 instance (LFunctor f, LMonad m) => LFunctor (Stream f m) where
   fmap f = loop where
-    loop stream = case stream of
-      Return r -> Return (f r)
-      Effect m  -> Effect (do {stream' <- m; return (loop stream')})
-      Step f   -> Step (fmap loop f)
+    loop :: Stream f m _ ⊸ Stream f m _
+    loop (Return r) = Return (f r)
+    loop (Effect m) = Effect (do {stream' <- m; return (loop stream')})
+    loop (Step f)   = Step (fmap loop f)
   {-# INLINABLE fmap #-}
-  a <$ stream0 = loop stream0 where
-    loop stream = case stream of
-      Return r -> Return a
-      Effect m  -> Effect (do {stream' <- m; return (loop stream')})
-      Step f    -> Step (fmap loop f)
+  (<$) = fmap . liftUnit
   {-# INLINABLE (<$) #-}  
 
 instance (LFunctor f, LMonad m) => LMonad (Stream f m) where
   return = Return
   {-# INLINE return #-}
-  stream1 >> stream2 = loop stream1 where
-    loop :: Stream f m r ⊸ Stream f m b
-    loop stream = case stream of
-      Return _ -> stream2
-      Effect m  -> Effect (fmap loop m)
-      Step f   -> Step (fmap loop f)  
+  stream1 >> stream2 = loop stream1 >> stream2 where
+    loop :: Stream f m () ⊸ Stream f m ()
+    loop (Return ()) = return ()
+    loop (Effect m) = Effect (fmap loop m)
+    loop (Step f)   = Step (fmap loop f)  
   {-# INLINABLE (>>) #-}
   -- (>>=) = _bind
   -- {-#INLINE (>>=) #-}
   --
   stream >>= f = loop stream where
-    loop stream0 = case stream0 of
-      Step fstr -> Step (fmap loop fstr)
-      Effect m   -> Effect (liftM loop m)
-      Return r  -> f r
+    loop :: Stream f m _ ⊸ Stream f m _
+    loop (Step fstr) = Step (fmap loop fstr)
+    loop (Effect m)  = Effect (fmap loop m)
+    loop (Return r)  = f r
   {-# INLINABLE (>>=) #-}       
 
   fail = lift . fail
