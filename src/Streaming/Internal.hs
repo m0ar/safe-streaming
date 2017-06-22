@@ -142,11 +142,9 @@ deriving instance (Typeable f, Typeable m, Data r, Data (m (Stream f m r))
 #endif
 
 instance (LFunctor f, LMonad m) => LFunctor (Stream f m) where
-  fmap f = loop where
-    loop :: Stream f m _ ⊸ Stream f m _
-    loop (Return r) = Return (f r)
-    loop (Effect m) = Effect (do {stream' <- m; return (loop stream')})
-    loop (Step f)   = Step (fmap loop f)
+  fmap f (Return r) = Return (f r)
+  fmap f (Effect m) = Effect (do {stream' <- m; return (fmap f stream')})
+  fmap f (Step fstr) = Step (fmap (fmap f) fstr)
   {-# INLINABLE fmap #-}
   (<$) = fmap . liftUnit
   {-# INLINABLE (<$) #-}  
