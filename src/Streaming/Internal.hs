@@ -142,8 +142,8 @@ deriving instance (Typeable f, Typeable m, Data r, Data (m (Stream f m r))
 #endif
 
 instance (LFunctor f, LMonad m) => LFunctor (Stream f m) where
-  fmap f (Return r) = Return (f r)
-  fmap f (Effect m) = Effect (do {stream' <- m; return (fmap f stream')})
+  fmap f (Return r)  = Return (f r)
+  fmap f (Effect m)  = Effect (do {stream' <- m; return (fmap f stream')})
   fmap f (Step fstr) = Step (fmap (fmap f) fstr)
   {-# INLINABLE fmap #-}
   (<$) = fmap . liftUnit
@@ -152,20 +152,20 @@ instance (LFunctor f, LMonad m) => LFunctor (Stream f m) where
 instance (LFunctor f, LMonad m) => LMonad (Stream f m) where
   return = Return
   {-# INLINE return #-}
-  stream1 >> stream2 = loop stream1 >> stream2 where
+  stream1 >> stream2 = loop stream1 >>= \() -> stream2 where
     loop :: Stream f m () ⊸ Stream f m ()
-    loop (Return ()) = return ()
-    loop (Effect m) = Effect (fmap loop m)
-    loop (Step f)   = Step (fmap loop f)  
+    loop (Return ()) = Return ()
+    loop (Effect m)  = Effect (fmap loop m)
+    loop (Step f)    = Step (fmap loop f)
   {-# INLINABLE (>>) #-}
   -- (>>=) = _bind
   -- {-#INLINE (>>=) #-}
   --
-  stream >>= f = loop stream where
-    loop :: Stream f m _ ⊸ Stream f m _
-    loop (Step fstr) = Step (fmap loop fstr)
-    loop (Effect m)  = Effect (fmap loop m)
-    loop (Return r)  = f r
+  stream >>= f = loop f stream where
+    loop :: (_ ⊸ _) ⊸ Stream f m _ ⊸ Stream f m _
+    loop fn (Return r)  = fn r
+    loop fn (Effect m)  = Effect $ fmap (loop fn) m
+    loop fn (Step fstr) = Step $ fmap (loop fn) fstr
   {-# INLINABLE (>>=) #-}       
 
   fail = lift . fail
