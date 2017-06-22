@@ -80,8 +80,8 @@ module Streaming.Internal (
 import Control.Monad hiding ((>>), (>>=), return, fmap, void, fail)
 import Control.Monad.LMonad
 import Data.Functor.LFunctor
-import Control.Monad.Trans
-import Control.Monad.Trans.Class
+import Control.Monad.Trans.LClass
+import Control.Monad.IO.Class
 import Control.Monad.Reader.Class
 import Control.Monad.Writer.Class
 import Control.Monad.State.Class
@@ -90,7 +90,7 @@ import Control.Monad.Cont.Class
 import Control.Applicative
 import Data.Foldable ( Foldable(..) )
 import Data.Traversable
-import Control.Monad.Morph
+import Control.Monad.Morph hiding (lift)
 import Data.Monoid (Monoid (..), (<>))
 import Data.Functor.Identity
 import Data.Data ( Data, Typeable )
@@ -226,7 +226,7 @@ instance (Applicative f, Monad m) => MonadPlus (Stream f m) where
   mzero = empty
   mplus = (<|>)
 
-instance Functor f => MonadTrans (Stream f) where
+instance LFunctor f => LMonadTrans (Stream f) where
   lift = Effect . liftM Return
   {-# INLINE lift #-}
 
