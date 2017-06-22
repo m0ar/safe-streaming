@@ -14,8 +14,8 @@ infixl 1 >>, >>=
 
 class LFunctor m => LMonad m where
   (>>=) :: m a ⊸ (a ⊸ m b) ⊸ m b
-    
-  (>>) :: m () ⊸ m b ⊸ m b
+
+  (>>) :: m () ⊸ m a ⊸ m a
   m >> k = m >>= \() -> k
   {-# INLINE (>>) #-}
 
