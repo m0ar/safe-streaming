@@ -87,7 +87,7 @@ import Control.Monad.Writer.Class
 import Control.Monad.State.Class
 import Control.Monad.Error.Class
 import Control.Monad.Cont.Class
-import Control.Applicative
+import Control.Applicative.LApplicative
 import Data.Foldable ( Foldable(..) )
 import Data.Traversable
 import Control.Monad.Morph hiding (lift)
@@ -196,7 +196,7 @@ instance (LFunctor f, LMonad m) => LMonad (Stream f m) where
     --     _bind (Return  r) f = f r;
 --  #-}
 
-instance (Functor f, Monad m) => Applicative (Stream f m) where
+instance (LFunctor f, LMonad m) => LApplicative (Stream f m) where
   pure = Return
   {-# INLINE pure #-}
   streamf <*> streamx = do {f <- streamf; x <- streamx; return (f x)} 
