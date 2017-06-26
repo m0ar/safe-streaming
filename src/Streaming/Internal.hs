@@ -497,12 +497,12 @@ maps phi = loop where
      which overlaps with the lens libraries.
 
 -}
-mapsM :: (Monad m, Functor f) => (forall x . f x -> m (g x)) -> Stream f m r -> Stream g m r
+mapsM :: (LMonad m, LFunctor f) => (forall x . f x ⊸ m (g x)) -> Stream f m r ⊸ Stream g m r
 mapsM phi = loop where
-  loop stream = case stream of
-    Return r  -> Return r
-    Effect m   -> Effect (liftM loop m)
-    Step f    -> Effect (liftM Step (phi (fmap loop f)))
+  loop :: Stream _ m r ⊸ Stream _ m r
+  loop (Return r) = Return r
+  loop (Effect m) = Effect $ fmap loop m
+  loop (Step f)   = Effect $ fmap Step $ phi $ fmap loop f
 {-# INLINABLE mapsM #-}
 
 
