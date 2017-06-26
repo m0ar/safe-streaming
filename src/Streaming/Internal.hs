@@ -477,13 +477,13 @@ unfold step = loop where
 > maps f . maps g = maps (f . g)
 
 -}
-maps :: (Monad m, Functor f)
-     => (forall x . f x -> g x) -> Stream f m r -> Stream g m r
+maps :: (LMonad m, LFunctor f, LFunctor g)
+     => (forall x . f x ⊸ g x) -> Stream f m r ⊸ Stream g m r
 maps phi = loop where
-  loop stream = case stream of
-    Return r  -> Return r
-    Effect m   -> Effect (liftM loop m)
-    Step f    -> Step (phi (fmap loop f))
+  loop :: Stream _ _ r ⊸ Stream _ _ r
+  loop (Return r) = Return r
+  loop (Effect m) = Effect $ fmap loop m
+  loop (Step f)   = Step $ phi $ fmap loop f
 {-# INLINABLE maps #-}
 
 
