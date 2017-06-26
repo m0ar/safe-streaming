@@ -343,41 +343,41 @@ instance LFunctor f => LMonadTrans (Stream f) where
 --      Step f -> Step (fmap loop f)
 --  {-# INLINABLE catchError #-}
 
-bracketStream :: (Functor f, MonadResource m) =>
-       IO a -> (a -> IO ()) -> (a -> Stream f m b) -> Stream f m b
-bracketStream alloc free inside = do
-        (key, seed) <- lift (allocate alloc free)
-        clean key (inside seed)
-  where
-    clean key = loop where
-      loop str = case str of
-        Return r -> Effect (release key >> return (Return r))
-        Effect m -> Effect (liftM loop m)
-        Step f   -> Step (fmap loop f)
-{-#INLINABLE bracketStream #-}
-
-
-bracket
-  :: (MonadIO m, MonadMask m, MonadResource m)
-  => m b -> (b -> IO ()) -> (b -> Stream (Of a) m r) -> Stream (Of a) m r
-bracket before after action = mask $ \restore -> do
-    h <- lift before
-    r <- restore (action h) `onException` after h
-    liftIO (after h)
-    return r
-    
-onException :: (Functor f, MonadResource m) => Stream f m a -> IO () -> Stream f m a
-m1 `onException` io = do
-  key <- lift (register io)
-  clean key m1
-  where
-    clean key = loop
-      where
-        loop str =
-          case str of
-            Return r -> Effect (unprotect key >> return (Return r))
-            Effect m -> Effect (fmap loop m)
-            Step f -> Step (fmap loop f)
+--bracketStream :: (LFunctor f, MonadResource m) =>
+--       IO a -> (a -> IO ()) -> (a -> Stream f m b) -> Stream f m b
+--bracketStream alloc free inside = do
+--        (key, seed) <- lift (allocate alloc free)
+--        clean key (inside seed)
+--  where
+--    clean key = loop where
+--      loop str = case str of
+--        Return r -> Effect (release key >> return (Return r))
+--        Effect m -> Effect (liftM loop m)
+--        Step f   -> Step (fmap loop f)
+--{-#INLINABLE bracketStream #-}
+--
+--
+--bracket
+--  :: (MonadIO m, MonadMask m, MonadResource m)
+--  => m b -> (b -> IO ()) -> (b -> Stream (Of a) m r) -> Stream (Of a) m r
+--bracket before after action = mask $ \restore -> do
+--    h <- lift before
+--    r <- restore (action h) `onException` after h
+--    liftIO (after h)
+--    return r
+--
+--onException :: (Functor f, MonadResource m) => Stream f m a -> IO () -> Stream f m a
+--m1 `onException` io = do
+--  key <- lift (register io)
+--  clean key m1
+--  where
+--    clean key = loop
+--      where
+--        loop str =
+--          case str of
+--            Return r -> Effect (unprotect key >> return (Return r))
+--            Effect m -> Effect (fmap loop m)
+--            Step f -> Step (fmap loop f)
 {-| Map a stream directly to its church encoding; compare @Data.List.foldr@
 -}
 destroy
