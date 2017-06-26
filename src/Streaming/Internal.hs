@@ -458,7 +458,7 @@ inspect = loop where
 > unfold (curry (:>) . Pipes.next) :: Monad m => Producer a m r -> Stream (Of a) m r
 
 -}
-unfold :: (Monad m, Functor f)
+unfold :: (LMonad m, LFunctor f)
         => (s -> m (Either r (f s)))
         -> s -> Stream f m r
 unfold step = loop where
