@@ -534,12 +534,12 @@ decompose = loop where
 
 {-| Run the effects in a stream that merely layers effects.
 -}
-run :: Monad m => Stream m m r -> m r
+run :: LMonad m => Stream m m r ⊸ m r
 run = loop where
-  loop stream = case stream of
-    Return r -> return r
-    Effect  m -> m >>= loop
-    Step mrest -> mrest >>= loop
+  loop :: Stream _ _ r ⊸ _ r
+  loop (Return r)   = return r
+  loop (Effect m)   = m >>= loop
+  loop (Step mrest) = mrest >>= loop
 {-# INLINABLE run #-}
 
 
