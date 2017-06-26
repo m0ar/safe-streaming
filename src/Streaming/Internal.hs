@@ -523,15 +523,14 @@ mapsM phi = loop where
 > hoist :: (Monad m, Functor f) => (forall a. m a -> n a) -> Stream f m r -> Stream f n r
 
 -}
-decompose :: (Monad m, Functor f) => Stream (Compose m f) m r -> Stream f m r
+decompose :: (LMonad m, LFunctor f) => Stream (Compose m f) m r ⊸ Stream f m r
 decompose = loop where
-  loop stream = case stream of
-    Return r -> Return r
-    Effect m ->  Effect (liftM loop m)
-    Step (Compose mstr) -> Effect $ do
-      str <- mstr
-      return (Step (fmap loop str))
-
+  loop :: Stream (Compose _ _) _ r ⊸ Stream _ _ r
+  loop (Return r) = Return r
+  loop (Effect m) = Effect $ fmap loop m
+  loop (Step (Compose mstr)) = Effect $ do
+    str <- mstr
+    return $ Step $ fmap loop str
 
 {-| Run the effects in a stream that merely layers effects.
 -}
