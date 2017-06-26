@@ -209,139 +209,139 @@ instance (LFunctor f, LMonad m) => LApplicative (Stream f m) where
 
    See also 'never', 'untilJust' and 'delays'
 -}
-instance (Applicative f, Monad m) => Alternative (Stream f m) where
-  empty = never
-  {-#INLINE empty #-}
-
-  str <|> str' = zipsWith (liftA2 (,)) str str'
-  {-#INLINE (<|>) #-}
-
-instance (Functor f, Monad m, Monoid w) => Monoid (Stream f m w) where
-  mempty = return mempty
-  {-#INLINE mempty #-}
-  mappend a b = a >>= \w -> fmap (w <>) b
-  {-#INLINE mappend #-}
-
-instance (Applicative f, Monad m) => MonadPlus (Stream f m) where
-  mzero = empty
-  mplus = (<|>)
+--instance (Applicative f, Monad m) => Alternative (Stream f m) where
+--  empty = never
+--  {-#INLINE empty #-}
+--
+--  str <|> str' = zipsWith (liftA2 (,)) str str'
+--  {-#INLINE (<|>) #-}
+--
+--instance (Functor f, Monad m, Monoid w) => Monoid (Stream f m w) where
+--  mempty = return mempty
+--  {-#INLINE mempty #-}
+--  mappend a b = a >>= \w -> fmap (w <>) b
+--  {-#INLINE mappend #-}
+--
+--instance (Applicative f, Monad m) => MonadPlus (Stream f m) where
+--  mzero = empty
+--  mplus = (<|>)
 
 instance LFunctor f => LMonadTrans (Stream f) where
-  lift = Effect . liftM Return
+  lift = Effect . fmap Return
   {-# INLINE lift #-}
 
-instance Functor f => MFunctor (Stream f) where
-  hoist trans = loop  where
-    loop stream = case stream of
-      Return r  -> Return r
-      Effect m   -> Effect (trans (liftM loop m))
-      Step f    -> Step (fmap loop f)
-  {-# INLINABLE hoist #-}  
-
-instance Functor f => MMonad (Stream f) where
-  embed phi = loop where
-    loop stream = case stream of
-      Return r -> Return r
-      Effect  m -> phi m >>= loop
-      Step   f -> Step (fmap loop f)
-  {-# INLINABLE embed #-}
-
-instance (MonadIO m, Functor f) => MonadIO (Stream f m) where
-  liftIO = Effect . liftM Return . liftIO
-  {-# INLINE liftIO #-}
-
-instance (MonadBase b m, Functor f) => MonadBase b (Stream f m) where
-  liftBase  = effect . fmap return . liftBase
-  {-#INLINE liftBase #-}
-
-instance (MonadThrow m, Functor f) => MonadThrow (Stream f m) where
-  throwM = lift . throwM
-  {-#INLINE throwM #-}
-
-instance (MonadCatch m, Functor f) => MonadCatch (Stream f m) where
-  catch str f = go str
-    where
-    go p = case p of
-      Step f      -> Step (fmap go f)
-      Return  r   -> Return r
-      Effect  m   -> Effect (catch (do
-          p' <- m
-          return (go p'))
-       (\e -> return (f e)) )
-  {-#INLINABLE catch #-}
-
--- The materials for the MonadMask instance are entirely lifted from pipes-safe
--- following remarks of Oliver Charles.
-data Restore m = Unmasked | Masked (forall x . m x -> m x)
-
-liftMask
-    :: forall m f r a . (MonadIO m, MonadCatch m, f ~ (Of a))
-    => (forall s . ((forall x . m x -> m x) -> m s) -> m s)
-    -> ((forall x . Stream f m x -> Stream f m x)
-        -> Stream f m r)
-    -> Stream f m r
-liftMask maskVariant k = do
-    ioref <- liftIO $ newIORef Unmasked
-
-    let -- mask adjacent actions in base monad
-        loop :: Stream f m r -> Stream f m r
-        loop (Step f)   = Step (fmap loop f)
-        loop (Return r) = Return r
-        loop (Effect m) = Effect $ maskVariant $ \unmaskVariant -> do
-            -- stash base's unmask and merge action
-            liftIO $ writeIORef ioref $ Masked unmaskVariant
-            m >>= chunk >>= return . loop
-
-        -- unmask adjacent actions in base monad
-        unmask :: forall q. Stream f m q -> Stream f m q
-        unmask (Step f)   = Step (fmap unmask f)
-        unmask (Return q) = Return q
-        unmask (Effect m) = Effect $ do
-            -- retrieve base's unmask and apply to merged action
-            Masked unmaskVariant <- liftIO $ readIORef ioref
-            unmaskVariant (m >>= chunk >>= return . unmask)
-
-        -- merge adjacent actions in base monad
-        chunk :: forall s. Stream f m s -> m (Stream f m s)
-        chunk (Effect m) = m >>= chunk
-        chunk s          = return s
-
-    loop $ k unmask
-
-instance (MonadMask m, MonadIO m, f ~ (Of a)) => MonadMask (Stream f m) where
-    mask                = liftMask mask
-    uninterruptibleMask = liftMask uninterruptibleMask
-
-instance (MonadResource m, Functor f) => MonadResource (Stream f m) where
-  liftResourceT = lift . liftResourceT
-  {-#INLINE liftResourceT #-}
-
-
-instance (Functor f, MonadReader r m) => MonadReader r (Stream f m) where
-  ask = lift ask
-  {-# INLINE ask #-}
-  local f = hoist (local f)
-  {-# INLINE local #-}
- 
-instance (Functor f, MonadState s m) => MonadState s (Stream f m) where
-  get = lift get
-  {-# INLINE get #-}
-  put = lift . put
-  {-# INLINE put #-}
-#if MIN_VERSION_mtl(2,1,1)
-  state f = lift (state f)
-  {-# INLINE state #-}
-#endif
-
-instance (Functor f, MonadError e m) => MonadError e (Stream f m) where
-  throwError = lift . throwError
-  {-# INLINE throwError #-}
-  str `catchError` f = loop str where
-    loop str = case str of
-      Return r -> Return r
-      Effect m -> Effect $ liftM loop m `catchError` (return . f)
-      Step f -> Step (fmap loop f)
-  {-# INLINABLE catchError #-}
+--instance Functor f => MFunctor (Stream f) where
+--  hoist trans = loop  where
+--    loop stream = case stream of
+--      Return r  -> Return r
+--      Effect m   -> Effect (trans (liftM loop m))
+--      Step f    -> Step (fmap loop f)
+--  {-# INLINABLE hoist #-}
+--
+--instance Functor f => MMonad (Stream f) where
+--  embed phi = loop where
+--    loop stream = case stream of
+--      Return r -> Return r
+--      Effect  m -> phi m >>= loop
+--      Step   f -> Step (fmap loop f)
+--  {-# INLINABLE embed #-}
+--
+--instance (MonadIO m, Functor f) => MonadIO (Stream f m) where
+--  liftIO = Effect . liftM Return . liftIO
+--  {-# INLINE liftIO #-}
+--
+--instance (MonadBase b m, Functor f) => MonadBase b (Stream f m) where
+--  liftBase  = effect . fmap return . liftBase
+--  {-#INLINE liftBase #-}
+--
+--instance (MonadThrow m, Functor f) => MonadThrow (Stream f m) where
+--  throwM = lift . throwM
+--  {-#INLINE throwM #-}
+--
+--instance (MonadCatch m, Functor f) => MonadCatch (Stream f m) where
+--  catch str f = go str
+--    where
+--    go p = case p of
+--      Step f      -> Step (fmap go f)
+--      Return  r   -> Return r
+--      Effect  m   -> Effect (catch (do
+--          p' <- m
+--          return (go p'))
+--       (\e -> return (f e)) )
+--  {-#INLINABLE catch #-}
+--
+---- The materials for the MonadMask instance are entirely lifted from pipes-safe
+---- following remarks of Oliver Charles.
+--data Restore m = Unmasked | Masked (forall x . m x -> m x)
+--
+--liftMask
+--    :: forall m f r a . (MonadIO m, MonadCatch m, f ~ (Of a))
+--    => (forall s . ((forall x . m x -> m x) -> m s) -> m s)
+--    -> ((forall x . Stream f m x -> Stream f m x)
+--        -> Stream f m r)
+--    -> Stream f m r
+--liftMask maskVariant k = do
+--    ioref <- liftIO $ newIORef Unmasked
+--
+--    let -- mask adjacent actions in base monad
+--        loop :: Stream f m r -> Stream f m r
+--        loop (Step f)   = Step (fmap loop f)
+--        loop (Return r) = Return r
+--        loop (Effect m) = Effect $ maskVariant $ \unmaskVariant -> do
+--            -- stash base's unmask and merge action
+--            liftIO $ writeIORef ioref $ Masked unmaskVariant
+--            m >>= chunk >>= return . loop
+--
+--        -- unmask adjacent actions in base monad
+--        unmask :: forall q. Stream f m q -> Stream f m q
+--        unmask (Step f)   = Step (fmap unmask f)
+--        unmask (Return q) = Return q
+--        unmask (Effect m) = Effect $ do
+--            -- retrieve base's unmask and apply to merged action
+--            Masked unmaskVariant <- liftIO $ readIORef ioref
+--            unmaskVariant (m >>= chunk >>= return . unmask)
+--
+--        -- merge adjacent actions in base monad
+--        chunk :: forall s. Stream f m s -> m (Stream f m s)
+--        chunk (Effect m) = m >>= chunk
+--        chunk s          = return s
+--
+--    loop $ k unmask
+--
+--instance (MonadMask m, MonadIO m, f ~ (Of a)) => MonadMask (Stream f m) where
+--    mask                = liftMask mask
+--    uninterruptibleMask = liftMask uninterruptibleMask
+--
+--instance (MonadResource m, Functor f) => MonadResource (Stream f m) where
+--  liftResourceT = lift . liftResourceT
+--  {-#INLINE liftResourceT #-}
+--
+--
+--instance (Functor f, MonadReader r m) => MonadReader r (Stream f m) where
+--  ask = lift ask
+--  {-# INLINE ask #-}
+--  local f = hoist (local f)
+--  {-# INLINE local #-}
+--
+--instance (Functor f, MonadState s m) => MonadState s (Stream f m) where
+--  get = lift get
+--  {-# INLINE get #-}
+--  put = lift . put
+--  {-# INLINE put #-}
+-- #if MIN_VERSION_mtl(2,1,1)
+--  state f = lift (state f)
+--  {-# INLINE state #-}
+-- #endif
+--
+--instance (Functor f, MonadError e m) => MonadError e (Stream f m) where
+--  throwError = lift . throwError
+--  {-# INLINE throwError #-}
+--  str `catchError` f = loop str where
+--    loop str = case str of
+--      Return r -> Return r
+--      Effect m -> Effect $ liftM loop m `catchError` (return . f)
+--      Step f -> Step (fmap loop f)
+--  {-# INLINABLE catchError #-}
 
 bracketStream :: (Functor f, MonadResource m) =>
        IO a -> (a -> IO ()) -> (a -> Stream f m b) -> Stream f m b
