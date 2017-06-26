@@ -94,7 +94,7 @@ import Control.Monad.Morph hiding (lift)
 import Data.Monoid (Monoid (..), (<>))
 import Data.Functor.Identity
 import Data.Data ( Data, Typeable )
-import Prelude hiding (splitAt, (>>), (>>=), return, fmap, fail)
+import Prelude hiding (splitAt, (>>), (>>=), return, fmap, fail, pure)
 import Data.Functor.Compose
 import Data.Functor.Sum
 import Control.Concurrent (threadDelay)
