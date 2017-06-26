@@ -378,16 +378,16 @@ instance LFunctor f => LMonadTrans (Stream f) where
 --            Return r -> Effect (unprotect key >> return (Return r))
 --            Effect m -> Effect (fmap loop m)
 --            Step f -> Step (fmap loop f)
+
 {-| Map a stream directly to its church encoding; compare @Data.List.foldr@
 -}
-destroy
-  :: (Functor f, Monad m) =>
-     Stream f m r -> (f b -> b) -> (m b -> b) -> (r -> b) -> b
-destroy stream0 construct effect done = loop stream0 where
-  loop stream = case stream of
-    Return r -> done r
-    Effect m  -> effect (liftM loop m)
-    Step fs  -> construct (fmap loop fs)
+destroy :: (LFunctor f, LMonad m) =>
+     Stream f m r ⊸ (f b ⊸ b) -> (m b ⊸ b) -> (r ⊸ b) ⊸  b
+destroy stream0 construct effect done = loop done stream0 where
+  loop :: (r ⊸ b) ⊸ Stream f m r ⊸ _
+  loop endFn (Return r) = endFn r
+  loop endFn (Effect m) = effect $ fmap (loop endFn) m
+  loop endFn (Step fs)  = construct $ fmap (loop endFn) fs
 {-# INLINABLE destroy #-}
 
 
