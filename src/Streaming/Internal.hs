@@ -545,7 +545,7 @@ run = loop where
 
 {-| Map each layer to an effect, and run them all.
 -}
-mapsM_ :: (Functor f, Monad m) => (forall x . f x -> m x) -> Stream f m r -> m r
+mapsM_ :: (LFunctor f, LMonad m) => (forall x . f x ⊸ m x) -> Stream f m r ⊸ m r
 mapsM_ f = run . maps f
 {-# INLINE mapsM_ #-}
 
