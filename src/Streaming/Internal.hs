@@ -419,8 +419,8 @@ destroy stream0 construct effect done = loop done stream0 where
 
 -}
 streamFold
-  :: (Functor f, Monad m) =>
-     (r -> b) -> (m b -> b) ->  (f b -> b) -> Stream f m r -> b
+  :: (LFunctor f, LMonad m) =>
+     (r ⊸ b) ⊸ (m b ⊸ b) -> (f b ⊸ b) -> Stream f m r ⊸ b
 streamFold done effect construct stream  = destroy stream construct effect done
 {-#INLINE streamFold #-}
 
