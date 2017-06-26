@@ -429,7 +429,7 @@ streamFold done effect construct stream  = destroy stream construct effect done
 > streamFold return_ effect_ step_ (streamBuild psi)  = psi return_ effect_ step_
 -}
 streamBuild
-  :: (forall b . (r -> b) -> (m b -> b) -> (f b -> b) ->  b) ->  Stream f m r
+  :: (forall b . (r -> b) -> (m b -> b) -> (f b -> b) ->  b) ⊸ Stream f m r
 streamBuild phi = phi Return Effect Step
 {-# INLINE streamBuild #-}
 
