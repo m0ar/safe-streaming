@@ -475,7 +475,7 @@ unfold step = loop where
 > maps f . maps g = maps (f . g)
 
 -}
-maps :: (LMonad m, LFunctor f, LFunctor g)
+maps :: (LMonad m, LFunctor f)
      => (forall x . f x ⊸ g x) -> Stream f m r ⊸ Stream g m r
 maps phi = loop where
   loop :: Stream _ _ r ⊸ Stream _ _ r
