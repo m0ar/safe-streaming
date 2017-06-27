@@ -661,9 +661,9 @@ b
 c
 
 -}
-takes :: (Monad m, Functor f) => Int -> Stream f m r -> Stream f m ()
-takes n = void . splitsAt n
-{-# INLINE takes #-}                      
+--takes :: (LMonad m, LFunctor f) => Int -> Stream f m r ⊸ Stream f m ()
+--takes n = void . splitsAt n
+--{-# INLINE takes #-}                      
 
 {-| Break a stream into substreams each with n functorial layers.
 
