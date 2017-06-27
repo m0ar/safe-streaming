@@ -575,21 +575,21 @@ mapsM_ f = run . maps f
 
 > iterTM alg = streamFold return (join . lift)
 -}
-iterTM ::
-  (Functor f, Monad m, MonadTrans t,
-   Monad (t m)) =>
-  (f (t m a) -> t m a) -> Stream f m a -> t m a
-iterTM out stream = destroyExposed stream out (join . lift) return
-{-# INLINE iterTM #-}
-
-{-| Specialized fold following the usage of @Control.Monad.Trans.Free@
-
-> iterT alg = streamFold return join alg
--}
-iterT ::
-  (Functor f, Monad m) => (f (m a) -> m a) -> Stream f m a -> m a
-iterT out stream = destroyExposed stream out join return
-{-# INLINE iterT #-}
+--iterTM ::
+--  (Functor f, Monad m, MonadTrans t,
+--   Monad (t m)) =>
+--  (f (t m a) -> t m a) -> Stream f m a -> t m a
+--iterTM out stream = destroyExposed stream out (join . lift) return
+--{-# INLINE iterTM #-}
+--
+--{-| Specialized fold following the usage of @Control.Monad.Trans.Free@
+--
+-- > iterT alg = streamFold return join alg
+---}
+--iterT ::
+--  (Functor f, Monad m) => (f (m a) -> m a) -> Stream f m a -> m a
+--iterT out stream = destroyExposed stream out join return
+--{-# INLINE iterT #-}
 
 {-| Dissolves the segmentation into layers of @Stream f m@ layers.
 
