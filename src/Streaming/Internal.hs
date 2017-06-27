@@ -1,7 +1,7 @@
 {-# LANGUAGE RankNTypes, StandaloneDeriving,DeriveDataTypeable, BangPatterns #-}
 {-# LANGUAGE UndecidableInstances, CPP, FlexibleInstances, MultiParamTypeClasses  #-}
 {-# LANGUAGE Trustworthy, ScopedTypeVariables, GADTs #-}
-{-# LANGUAGE RebindableSyntax, PartialTypeSignatures #-}
+{-# LANGUAGE RebindableSyntax, PartialTypeSignatures, InstanceSigs #-}
 module Streaming.Internal (
     -- * The free monad transformer
     -- $stream
@@ -152,15 +152,13 @@ instance (LFunctor f, LMonad m) => LFunctor (Stream f m) where
 instance (LFunctor f, LMonad m) => LMonad (Stream f m) where
   return = Return
   {-# INLINE return #-}
-  stream1 >> stream2 = loop stream1 >>= \() -> stream2 where
-    loop :: Stream f m () ⊸ Stream f m ()
-    loop (Return ()) = Return ()
-    loop (Effect m)  = Effect (fmap loop m)
-    loop (Step f)    = Step (fmap loop f)
+  (>>) :: Stream f m () ⊸ Stream f m r ⊸ Stream f m r
+  stream1 >> stream2 = stream1 >>= \() -> stream2
   {-# INLINABLE (>>) #-}
   -- (>>=) = _bind
   -- {-#INLINE (>>=) #-}
   --
+  (>>=) :: Stream f m a ⊸ (a ⊸ Stream f m b) ⊸ Stream f m b
   stream >>= f = loop f stream where
     loop :: (_ ⊸ _) ⊸ Stream f m _ ⊸ Stream f m _
     loop fn (Return r)  = fn r
