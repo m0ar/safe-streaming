@@ -93,7 +93,7 @@ import Control.Monad.Morph hiding (lift)
 import Data.Monoid (Monoid (..), (<>))
 import Data.Functor.Identity
 import Data.Data ( Data, Typeable )
-import Prelude hiding (splitAt, (>>), (>>=), return, fmap, fail, pure)
+import Prelude hiding (splitAt, (>>), (>>=), return, fmap, fail, pure, (<$>))
 import Data.Functor.Compose
 import Data.Functor.Sum
 import Control.Concurrent (threadDelay)
@@ -624,16 +624,15 @@ concats  = loop where
 5
 
 -}
-splitsAt :: (Monad m, Functor f) => Int -> Stream f m r -> Stream f m (Stream f m r)
-splitsAt  = loop  where
-  loop !n stream
-    | n <= 0 = Return stream
-    | otherwise = case stream of
-        Return r       -> Return (Return r)
-        Effect m        -> Effect (liftM (loop n) m)
-        Step fs        -> case n of
-          0 -> Return (Step fs)
-          _ -> Step (fmap (loop (n-1)) fs)
+splitsAt :: (LMonad m, LFunctor f) => Int -> Stream f m r ⊸ Stream f m (Stream f m r)
+splitsAt  = loop where
+  loop :: Int -> Stream _ _ _ ⊸ Stream _ _ (Stream _ _ _)
+  loop !n stream | n <= 0 = Return stream
+  loop !n (Return r) = Return (Return r)
+  loop !n (Effect m) = Effect $ fmap (loop n) m
+  loop !n (Step  fs) = case n of
+    0 -> Return $ Step fs
+    _ -> Step $ loop (n-1) <$> fs
 {-# INLINABLE splitsAt #-}
 
 {- Functor-general take.
