@@ -672,12 +672,12 @@ c
 2
 1
 -}
-chunksOf :: (Monad m, Functor f) => Int -> Stream f m r -> Stream (Stream f m) m r
+chunksOf :: (LMonad m, LFunctor f) => Int -> Stream f m r ⊸ Stream (Stream f m) m r
 chunksOf n0 = loop where
-  loop stream = case stream of
-    Return r  -> Return r
-    Effect m  -> Effect (liftM loop m)
-    Step fs   -> Step (Step (fmap (fmap loop . splitsAt (n0-1)) fs))
+  loop :: Stream _ _ _ ⊸ Stream (Stream _ _) _ _
+  loop (Return r) = Return r
+  loop (Effect m) = Effect $ fmap loop m
+  loop (Step  fs) = Step $ Step $ fmap (fmap loop . splitsAt (n0-1)) fs
 {-# INLINABLE chunksOf #-}        
 
 {- | Make it possible to \'run\' the underlying transformed monad.
