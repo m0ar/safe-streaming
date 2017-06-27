@@ -770,12 +770,12 @@ destroyExposed stream0 construct effect done = loop stream0 where
     @FreeT@.
 
 -}
-unexposed :: (Functor f, Monad m) => Stream f m r -> Stream f m r
+unexposed :: (LFunctor f, LMonad m) => Stream f m r ⊸ Stream f m r
 unexposed = Effect . loop where
-  loop stream = case stream of
-    Return r -> return (Return r)
-    Effect  m -> m >>= loop
-    Step   f -> return (Step (fmap (Effect . loop) f))
+  loop :: Stream _ _ _ ⊸ _ (Stream _ _ _)
+  loop (Return r) = return $ Return r
+  loop (Effect m) = m >>= loop
+  loop (Step   f) = return $ Step $ fmap (Effect . loop) f
 {-# INLINABLE unexposed #-} 
 
 
