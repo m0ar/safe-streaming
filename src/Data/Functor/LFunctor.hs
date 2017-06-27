@@ -10,13 +10,13 @@ import Prelude ((.))
 class LFunctor f where
   fmap :: (a ⊸ b) ⊸ f a ⊸ f b
 
-  (<$) :: a -> f () ⊸ f a
+  (<$) :: a ⊸ f () ⊸ f a
   (<$) = fmap . liftUnit
 
 (<$>) :: LFunctor f => (a ⊸ b) ⊸ f a ⊸ f b
 (<$>) = fmap
 
-($>) :: LFunctor f => f () ⊸ a -> f a
+($>) :: LFunctor f => f () ⊸ a ⊸ f a
 ($>) = flip (<$)
  
 infixl 4 $>
