@@ -77,7 +77,6 @@ module Streaming.Internal (
   
    ) where
 
-import Control.Monad hiding ((>>), (>>=), return, fmap, void, fail)
 import Control.Monad.LMonad
 import Data.Functor.LFunctor
 import Control.Monad.Trans.LClass
@@ -594,12 +593,12 @@ mapsM_ f = run . maps f
 {-| Dissolves the segmentation into layers of @Stream f m@ layers.
 
 -}
-concats :: (Monad m, Functor f) => Stream (Stream f m) m r -> Stream f m r
+concats :: (LMonad m, LFunctor f) => Stream (Stream f m) m r ⊸ Stream f m r
 concats  = loop where
-  loop stream = case stream of
-    Return r -> return r
-    Effect m  -> join $ lift (liftM loop m)
-    Step fs  -> join (fmap loop fs)
+  loop :: Stream (Stream _ _) _ r ⊸ Stream _ _ r 
+  loop (Return r) = return r
+  loop (Effect m) = join $ lift $ fmap loop m
+  loop (Step fs)  = join $ fmap loop fs
 {-# INLINE concats #-}
 
 {-| Split a succession of layers after some number, returning a streaming or
