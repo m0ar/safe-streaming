@@ -720,8 +720,8 @@ repeatsM mf = loop where
 >>>
 -}
 
-cycles :: (Monad m, Functor f) =>  Stream f m () -> Stream f m r
-cycles = forever
+cycles :: (LMonad m, LFunctor f) =>  Stream f m () -> Stream f m r
+cycles s = s >> cycles s
 
 
 
