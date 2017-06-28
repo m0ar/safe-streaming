@@ -549,7 +549,7 @@ mapsM_ f = run . maps f
 
 {-| Interpolate a layer at each segment. This specializes to e.g.
 
-> intercalates :: (Monad m, Functor f) => Stream f m () -> Stream (Stream f m) m r -> Stream f m r
+> intercalates :: (LMonad m, LFunctor f) => Stream f m () -> Stream (Stream f m) m r  ⊸ Stream f m r
 -}
 intercalates :: (LMonad m, LMonad (t m), LMonadTrans t) 
              => t m x -> Stream (t m) m r ⊸ t m r
