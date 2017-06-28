@@ -696,7 +696,7 @@ distribute = loop where
 repeats :: (LMonad m, LFunctor f) => f () -> Stream f m r
 repeats f = loop where
   loop :: Stream _ _ _
-  loop = Effect (return (Step (fmap (\() -> loop) f)))
+  loop = Effect (return (Step (fmap (liftUnit loop) f)))
 
 -- | Repeat an effect containing a functorial layer, command or instruction forever.
 repeatsM :: (LMonad m, LFunctor f) => m (f ()) -> Stream f m r
