@@ -551,24 +551,24 @@ mapsM_ f = run . maps f
 
 > intercalates :: (Monad m, Functor f) => Stream f m () -> Stream (Stream f m) m r -> Stream f m r
 -}
---intercalates :: (Monad m, Monad (t m), MonadTrans t) =>
---     t m x -> Stream (t m) m r -> t m r
---intercalates sep = go0
---  where
---    go0 f = case f of
---      Return r -> return r
---      Effect m -> lift m >>= go0
---      Step fstr -> do
---                f' <- fstr
---                go1 f'
---    go1 f = case f of
---      Return r -> return r
---      Effect m     -> lift m >>= go1
---      Step fstr ->  do
---                sep
---                f' <- fstr
---                go1 f'
---{-# INLINABLE intercalates #-}
+intercalates :: (LMonad m, LMonad (t m), LMonadTrans t) 
+             => t m x -> Stream (t m) m r ⊸ t m r
+intercalates sep = go0
+  where
+    go0 :: Stream (_ _) _ _ ⊸ _ _ _
+    go0 (Return  r) = return r
+    go0 (Effect  m) = lift m >>= go0
+    go0 (Step fstr) = do
+      f' <- fstr
+      go1 f'
+    go1 :: Stream _ _ _ ⊸ _ _ _
+    go1 (Return  r) = return r
+    go1 (Effect  m) = lift m >>= go1
+    go1 (Step fstr) = do
+      _ <- sep
+      f' <- fstr
+      go1 f'
+{-# INLINABLE intercalates #-}
 
 {-| Specialized fold following the usage of @Control.Monad.Trans.Free@
 
