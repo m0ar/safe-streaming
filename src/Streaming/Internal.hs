@@ -710,8 +710,8 @@ repeatsM mf = loop where
 
 > replicates n = takes n . repeats
 -}
-replicates :: (Monad m, Functor f) => Int -> f () -> Stream f m ()
-replicates n f = splitsAt n (repeats f) >> return ()
+--replicates :: (LMonad m, LFunctor f) => Int -> f () -> Stream f m ()
+--replicates n f = splitsAt n (repeats f) >> return ()
 
 {-| Construct an infinite stream by cycling a finite one
 
