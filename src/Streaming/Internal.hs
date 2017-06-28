@@ -693,9 +693,10 @@ distribute = loop where
 {-#INLINABLE distribute #-}
   
 -- | Repeat a functorial layer (a \"command\" or \"instruction\") forever.
-repeats :: (Monad m, Functor f) => f () -> Stream f m r
+repeats :: (LMonad m, LFunctor f) => f () -> Stream f m r
 repeats f = loop where
-  loop = Effect (return (Step (fmap (\_ -> loop) f)))
+  loop :: Stream _ _ _
+  loop = Effect (return (Step (fmap (\() -> loop) f)))
 
 -- | Repeat an effect containing a functorial layer, command or instruction forever.
 repeatsM :: (Monad m, Functor f) => m (f ()) -> Stream f m r
