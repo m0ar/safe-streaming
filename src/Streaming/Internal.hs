@@ -699,11 +699,12 @@ repeats f = loop where
   loop = Effect (return (Step (fmap (\() -> loop) f)))
 
 -- | Repeat an effect containing a functorial layer, command or instruction forever.
-repeatsM :: (Monad m, Functor f) => m (f ()) -> Stream f m r
+repeatsM :: (LMonad m, LFunctor f) => m (f ()) -> Stream f m r
 repeatsM mf = loop where
+  loop :: Stream _ _ _
   loop = Effect $ do
      f <- mf
-     return $ Step $ fmap (\_ -> loop) f
+     return $ Step $ fmap (liftUnit loop) f
 
 {- | Repeat a functorial layer, command or instruction a fixed number of times.
 
