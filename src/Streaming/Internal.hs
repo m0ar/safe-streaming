@@ -728,23 +728,23 @@ cycles s = s >> cycles s
 hoistExposed trans = loop where
   loop stream = case stream of
     Return r  -> Return r
-    Effect m   -> Effect (trans (liftM loop m))
+    Effect m   -> Effect (trans (fmap loop m))
     Step f    -> Step (fmap loop f)
 
-mapsExposed :: (Monad m, Functor f)
-     => (forall x . f x -> g x) -> Stream f m r -> Stream g m r
+mapsExposed :: (LMonad m, LFunctor f)
+     => (forall x . f x ⊸ g x) -> Stream f m r ⊸ Stream g m r
 mapsExposed phi = loop where
-  loop stream = case stream of
-    Return r  -> Return r
-    Effect m   -> Effect (liftM loop m)
-    Step f    -> Step (phi (fmap loop f))
+  loop :: Stream _ _ _ ⊸ Stream _ _ _
+  loop (Return r) = Return r
+  loop (Effect m) = Effect $ fmap loop m
+  loop (Step   f) = Step $ phi $ fmap loop f
 {-# INLINABLE mapsExposed #-}
 
 mapsMExposed phi = loop where
   loop stream = case stream of
     Return r  -> Return r
-    Effect m   -> Effect (liftM loop m)
-    Step f    -> Effect (liftM Step (phi (fmap loop f)))
+    Effect m   -> Effect (fmap loop m)
+    Step f    -> Effect (fmap Step (phi (fmap loop f)))
 {-# INLINABLE mapsMExposed #-}
 
 --     Map a stream directly to its church encoding; compare @Data.List.foldr@
