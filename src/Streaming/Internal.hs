@@ -89,7 +89,7 @@ import Control.Monad.Cont.Class
 import Control.Applicative.LApplicative
 import Data.Foldable ( Foldable(..) )
 import Data.Traversable
-import Control.Monad.Morph hiding (lift)
+import Control.Monad.Morph.LMorph
 import Data.Monoid (Monoid (..), (<>))
 import Data.Functor.Identity
 import Data.Data ( Data, Typeable )
@@ -227,14 +227,14 @@ instance LFunctor f => LMonadTrans (Stream f) where
   lift = Effect . fmap Return
   {-# INLINE lift #-}
 
---instance Functor f => MFunctor (Stream f) where
---  hoist trans = loop  where
---    loop stream = case stream of
---      Return r  -> Return r
---      Effect m   -> Effect (trans (liftM loop m))
---      Step f    -> Step (fmap loop f)
---  {-# INLINABLE hoist #-}
---
+instance LFunctor f => LMFunctor (Stream f) where
+  hoist trans = loop where
+    loop :: Stream f _ _ ⊸ Stream f _ _
+    loop (Return r) = Return r
+    loop (Effect m) = Effect $ trans $ fmap loop m
+    loop (Step   f) = Step $ fmap loop f
+  {-# INLINABLE hoist #-}
+
 --instance Functor f => MMonad (Stream f) where
 --  embed phi = loop where
 --    loop stream = case stream of
