@@ -832,8 +832,8 @@ effect = Effect
 
 -}
 
-yields ::  (Monad m, Functor f) => f r -> Stream f m r
-yields fr = Step (fmap Return fr)
+yields :: (LMonad m, LFunctor f) => f r ⊸ Stream f m r
+yields = Step . fmap Return
 {-#INLINE yields #-}
 
 
