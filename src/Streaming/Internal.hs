@@ -762,7 +762,7 @@ mapsMExposed phi = loop where
 destroyExposed stream0 construct effect done = loop stream0 where
   loop stream = case stream of
     Return r -> done r
-    Effect m  -> effect (liftM loop m)
+    Effect m  -> effect (fmap loop m)
     Step fs  -> construct (fmap loop fs)
 {-# INLINABLE destroyExposed #-}
 
