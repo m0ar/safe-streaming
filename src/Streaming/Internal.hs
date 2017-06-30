@@ -196,7 +196,10 @@ instance (LFunctor f, LMonad m) => LMonad (Stream f m) where
 instance (LFunctor f, LMonad m) => LApplicative (Stream f m) where
   pure = Return
   {-# INLINE pure #-}
-  streamf <*> streamx = do {f <- streamf; x <- streamx; return (f x)} 
+  streamf <*> streamx = do
+    f <- streamf
+    x <- streamx
+    return (f x)
   {-# INLINE (<*>) #-}  
 
 {- | The 'Alternative' instance glues streams together stepwise.
@@ -415,9 +418,8 @@ destroy stream0 construct effect done = loop done stream0 where
      -> Stream f m a -> Stream g m a                 -- mapped
 
 -}
-streamFold
-  :: (LFunctor f, LMonad m) =>
-     (r ⊸ b) ⊸ (m b ⊸ b) -> (f b ⊸ b) -> Stream f m r ⊸ b
+streamFold :: (LFunctor f, LMonad m)
+           => (r ⊸ b) ⊸ (m b ⊸ b) -> (f b ⊸ b) -> Stream f m r ⊸ b
 streamFold done effect construct stream  = destroy stream construct effect done
 {-#INLINE streamFold #-}
 
@@ -454,8 +456,7 @@ inspect (Step fs)  = return $ Right fs
 
 -}
 unfold :: (LMonad m, LFunctor f)
-        => (s -> m (Either r (f s)))
-        -> s -> Stream f m r
+        => (s -> m (Either r (f s))) -> s -> Stream f m r
 unfold step = loop where
   loop s0 = Effect $ do
     e <- step s0
@@ -472,10 +473,10 @@ unfold step = loop where
 > maps f . maps g = maps (f . g)
 
 -}
-maps :: (LMonad m, LFunctor f)
+maps :: forall m f g r. (LMonad m, LFunctor f)
      => (forall x . f x ⊸ g x) -> Stream f m r ⊸ Stream g m r
 maps phi = loop where
-  loop :: Stream _ _ r ⊸ Stream _ _ r
+  loop :: Stream f m r ⊸ Stream g m r
   loop (Return r) = Return r
   loop (Effect m) = Effect $ fmap loop m
   loop (Step f)   = Step $ phi $ fmap loop f
@@ -492,7 +493,8 @@ maps phi = loop where
      which overlaps with the lens libraries.
 
 -}
-mapsM :: (LMonad m, LFunctor f) => (forall x . f x ⊸ m (g x)) -> Stream f m r ⊸ Stream g m r
+mapsM :: (LMonad m, LFunctor f)
+      => (forall x . f x ⊸ m (g x)) -> Stream f m r ⊸ Stream g m r
 mapsM phi = loop where
   loop :: Stream _ m r ⊸ Stream _ m r
   loop (Return r) = Return r
@@ -518,9 +520,10 @@ mapsM phi = loop where
 > hoist :: (Monad m, Functor f) => (forall a. m a -> n a) -> Stream f m r -> Stream f n r
 
 -}
-decompose :: (LMonad m, LFunctor f) => Stream (Compose m f) m r ⊸ Stream f m r
+decompose :: forall m f r. (LMonad m, LFunctor f)
+          => Stream (Compose m f) m r ⊸ Stream f m r
 decompose = loop where
-  loop :: Stream (Compose _ _) _ r ⊸ Stream _ _ r
+  loop :: Stream (Compose m f) m r ⊸ Stream f m r
   loop (Return r) = Return r
   loop (Effect m) = Effect $ fmap loop m
   loop (Step (Compose mstr)) = Effect $ do
@@ -529,9 +532,9 @@ decompose = loop where
 
 {-| Run the effects in a stream that merely layers effects.
 -}
-run :: LMonad m => Stream m m r ⊸ m r
+run :: forall m r. LMonad m => Stream m m r ⊸ m r
 run = loop where
-  loop :: Stream _ _ r ⊸ _ r
+  loop :: Stream m m r ⊸ m r
   loop (Return r)   = return r
   loop (Effect m)   = m >>= loop
   loop (Step mrest) = mrest >>= loop
@@ -549,17 +552,17 @@ mapsM_ f = run . maps f
 
 > intercalates :: (LMonad m, LFunctor f) => Stream f m () -> Stream (Stream f m) m r  ⊸ Stream f m r
 -}
-intercalates :: (LMonad m, LMonad (t m), LMonadTrans t) 
+intercalates :: forall m t x r. (LMonad m, LMonad (t m), LMonadTrans t)
              => t m x -> Stream (t m) m r ⊸ t m r
 intercalates sep = go0
   where
-    go0 :: Stream (_ _) _ _ ⊸ _ _ _
+    go0 :: Stream (t m) m r ⊸ t m r
     go0 (Return  r) = return r
     go0 (Effect  m) = lift m >>= go0
     go0 (Step fstr) = do
       f' <- fstr
       go1 f'
-    go1 :: Stream _ _ _ ⊸ _ _ _
+    go1 :: Stream (t m) m r ⊸ t m r
     go1 (Return  r) = return r
     go1 (Effect  m) = lift m >>= go1
     go1 (Step fstr) = do
@@ -591,9 +594,9 @@ intercalates sep = go0
 {-| Dissolves the segmentation into layers of @Stream f m@ layers.
 
 -}
-concats :: (LMonad m, LFunctor f) => Stream (Stream f m) m r ⊸ Stream f m r
+concats :: forall f m r. (LMonad m, LFunctor f) => Stream (Stream f m) m r ⊸ Stream f m r
 concats  = loop where
-  loop :: Stream (Stream _ _) _ r ⊸ Stream _ _ r 
+  loop :: Stream (Stream f m) m r ⊸ Stream f m r 
   loop (Return r) = return r
   loop (Effect m) = join $ lift $ fmap loop m
   loop (Step fs)  = join $ fmap loop fs
@@ -622,9 +625,10 @@ concats  = loop where
 5
 
 -}
-splitsAt :: (LMonad m, LFunctor f) => Int -> Stream f m r ⊸ Stream f m (Stream f m r)
+splitsAt :: forall f m r. (LMonad m, LFunctor f) 
+         => Int -> Stream f m r ⊸ Stream f m (Stream f m r)
 splitsAt  = loop where
-  loop :: Int -> Stream _ _ _ ⊸ Stream _ _ (Stream _ _ _)
+  loop :: Int -> Stream f m r ⊸ Stream f m (Stream f m r)
   loop !n stream | n <= 0 = Return stream
   loop !n (Return r) = Return (Return r)
   loop !n (Effect m) = Effect $ fmap (loop n) m
@@ -670,9 +674,9 @@ c
 2
 1
 -}
-chunksOf :: (LMonad m, LFunctor f) => Int -> Stream f m r ⊸ Stream (Stream f m) m r
+chunksOf :: forall f m r. (LMonad m, LFunctor f) => Int -> Stream f m r ⊸ Stream (Stream f m) m r
 chunksOf n0 = loop where
-  loop :: Stream _ _ _ ⊸ Stream (Stream _ _) _ _
+  loop :: Stream f m r ⊸ Stream (Stream f m) m r
   loop (Return r) = Return r
   loop (Effect m) = Effect $ fmap loop m
   loop (Step  fs) = Step $ Step $ fmap (fmap loop . splitsAt (n0-1)) fs
@@ -691,15 +695,15 @@ distribute = loop where
 {-#INLINABLE distribute #-}
   
 -- | Repeat a functorial layer (a \"command\" or \"instruction\") forever.
-repeats :: (LMonad m, LFunctor f) => f () -> Stream f m r
+repeats :: forall f m r. (LMonad m, LFunctor f) => f () -> Stream f m r
 repeats f = loop where
-  loop :: Stream _ _ _
-  loop = Effect (return (Step (fmap (liftUnit loop) f)))
+  loop :: Stream f m r
+  loop = Effect $ return $ Step $ fmap (liftUnit loop) f
 
 -- | Repeat an effect containing a functorial layer, command or instruction forever.
-repeatsM :: (LMonad m, LFunctor f) => m (f ()) -> Stream f m r
+repeatsM :: forall f m r. (LMonad m, LFunctor f) => m (f ()) -> Stream f m r
 repeatsM mf = loop where
-  loop :: Stream _ _ _
+  loop :: Stream f m r
   loop = Effect $ do
      f <- mf
      return $ Step $ fmap (liftUnit loop) f
@@ -759,9 +763,10 @@ mapsMExposed phi = loop where
 --     constraint is that the @m x -> x@ argument is an /Eilenberg-Moore algebra/.
 --     See Atkey "Reasoning about Stream Processing with Effects"
 
-destroyExposed :: (LFunctor f, LMonad m) => Stream f m r ⊸ (f a ⊸ a) -> (m a ⊸ a) -> (r ⊸ a) -> a
+destroyExposed :: forall f m r a. (LFunctor f, LMonad m) 
+               => Stream f m r ⊸ (f a ⊸ a) -> (m a ⊸ a) -> (r ⊸ a) -> a
 destroyExposed stream0 construct effect done = loop stream0 where
-  loop :: Stream _ _ _ ⊸ _
+  loop :: Stream f m r ⊸ a
   loop (Return r) = done r
   loop (Effect m) = effect $ fmap loop m
   loop (Step  fs) = construct $ fmap loop fs
@@ -773,9 +778,9 @@ destroyExposed stream0 construct effect done = loop stream0 where
     @FreeT@.
 
 -}
-unexposed :: (LFunctor f, LMonad m) => Stream f m r ⊸ Stream f m r
+unexposed :: forall f m r. (LFunctor f, LMonad m) => Stream f m r ⊸ Stream f m r
 unexposed = Effect . loop where
-  loop :: Stream _ _ _ ⊸ _ (Stream _ _ _)
+  loop :: Stream f m r ⊸ m (Stream f m r)
   loop (Return r) = return $ Return r
   loop (Effect m) = m >>= loop
   loop (Step   f) = return $ Step $ fmap (Effect . loop) f
