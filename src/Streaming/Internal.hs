@@ -986,8 +986,8 @@ unseparate str = destroyExposed
 {-#INLINABLE unseparate #-}
 
 
-unzips :: (Monad m, Functor f, Functor g) =>
-   Stream (Compose f g) m r ->  Stream f (Stream g m) r
+unzips :: (LMonad m, LFunctor f, LFunctor g)
+       => Stream (Compose f g) m r ⊸ Stream f (Stream g m) r
 unzips str = destroyExposed
   str
   (\(Compose fgstr) -> Step (fmap (Effect . yields) fgstr))
