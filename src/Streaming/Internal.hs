@@ -725,12 +725,13 @@ cycles :: (LMonad m, LFunctor f) =>  Stream f m () -> Stream f m r
 cycles s = s >> cycles s
 
 
-
+hoistExposed :: forall m m1 f r. (LFunctor f, LMonad m1)
+             => (m1 (Stream f m r) ⊸ m (Stream f m r)) -> Stream f m1 r ⊸ Stream f m r
 hoistExposed trans = loop where
-  loop stream = case stream of
-    Return r  -> Return r
-    Effect m   -> Effect (trans (fmap loop m))
-    Step f    -> Step (fmap loop f)
+  loop :: Stream f m1 r ⊸ Stream f m r
+  loop (Return r) = Return r
+  loop (Effect m) = Effect $ trans $ fmap loop m
+  loop (Step  fs) = Step $ fmap loop fs
 
 mapsExposed :: (LMonad m, LFunctor f)
      => (forall x . f x ⊸ g x) -> Stream f m r ⊸ Stream g m r
