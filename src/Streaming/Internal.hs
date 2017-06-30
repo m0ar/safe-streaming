@@ -758,12 +758,12 @@ mapsMExposed phi = loop where
 --     constraint is that the @m x -> x@ argument is an /Eilenberg-Moore algebra/.
 --     See Atkey "Reasoning about Stream Processing with Effects"
 
-
+destroyExposed :: (LFunctor f, LMonad m) => Stream f m r ⊸ (f a ⊸ a) -> (m a ⊸ a) -> (r ⊸ a) -> a
 destroyExposed stream0 construct effect done = loop stream0 where
-  loop stream = case stream of
-    Return r -> done r
-    Effect m  -> effect (fmap loop m)
-    Step fs  -> construct (fmap loop fs)
+  loop :: Stream _ _ _ ⊸ _
+  loop (Return r) = done r
+  loop (Effect m) = effect $ fmap loop m
+  loop (Step  fs) = construct $ fmap loop fs
 {-# INLINABLE destroyExposed #-}
 
 
