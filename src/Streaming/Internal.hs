@@ -733,10 +733,10 @@ hoistExposed trans = loop where
   loop (Effect m) = Effect $ trans $ fmap loop m
   loop (Step  fs) = Step $ fmap loop fs
 
-mapsExposed :: (LMonad m, LFunctor f)
-     => (forall x . f x ⊸ g x) -> Stream f m r ⊸ Stream g m r
+mapsExposed :: forall f g m r. (LMonad m, LFunctor f)
+            => (forall x . f x ⊸ g x) -> Stream f m r ⊸ Stream g m r
 mapsExposed phi = loop where
-  loop :: Stream _ _ _ ⊸ Stream _ _ _
+  loop :: Stream f m r ⊸ Stream g m r
   loop (Return r) = Return r
   loop (Effect m) = Effect $ fmap loop m
   loop (Step   f) = Step $ phi $ fmap loop f
