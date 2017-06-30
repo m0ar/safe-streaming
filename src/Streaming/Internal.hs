@@ -438,13 +438,11 @@ streamBuild phi = phi Return Effect Step
 > unfold inspect = id
 > Streaming.Prelude.unfoldr StreamingPrelude.next = id
 -}
-inspect :: (LFunctor f, LMonad m) =>
-     Stream f m r ⊸ m (Either r (f (Stream f m r)))
-inspect = loop where
-  loop :: Stream f _ r ⊸ _ (Either r (f (Stream f _ r)))
-  loop (Return r) = return $ Left r
-  loop (Effect m) = m >>= loop
-  loop (Step fs)  = return $ Right fs
+inspect :: forall f m r. (LFunctor f, LMonad m) 
+        => Stream f m r ⊸ m (Either r (f (Stream f m r)))
+inspect (Return r) = return $ Left r
+inspect (Effect m) = m >>= inspect
+inspect (Step fs)  = return $ Right fs
 {-# INLINABLE inspect #-}
   
 {-| Build a @Stream@ by unfolding steps starting from a seed. See also
