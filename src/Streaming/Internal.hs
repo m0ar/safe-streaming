@@ -742,11 +742,13 @@ mapsExposed phi = loop where
   loop (Step   f) = Step $ phi $ fmap loop f
 {-# INLINABLE mapsExposed #-}
 
+mapsMExposed :: forall f f1 m r. (LFunctor f1, LMonad m)
+             => (f1 (Stream f m r) ⊸ m (f (Stream f m r))) -> Stream f1 m r ⊸ Stream f m r
 mapsMExposed phi = loop where
-  loop stream = case stream of
-    Return r  -> Return r
-    Effect m   -> Effect (fmap loop m)
-    Step f    -> Effect (fmap Step (phi (fmap loop f)))
+  loop :: Stream f1 m r ⊸ Stream f m r
+  loop (Return r) = Return r
+  loop (Effect m) = Effect $ fmap loop m
+  loop (Step  fs) = Effect $ fmap Step (phi (fmap loop fs))
 {-# INLINABLE mapsMExposed #-}
 
 --     Map a stream directly to its church encoding; compare @Data.List.foldr@
