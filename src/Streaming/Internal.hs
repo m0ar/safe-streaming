@@ -811,7 +811,7 @@ unexposed = Effect . loop where
 > lift = effect . fmap return
 
 -}
-wrap :: (Monad m, Functor f ) => f (Stream f m r) -> Stream f m r
+wrap :: (LMonad m, LFunctor f ) => f (Stream f m r) ⊸ Stream f m r
 wrap = Step
 {-#INLINE wrap #-}
 
@@ -821,7 +821,7 @@ wrap = Step
 > effect = join . lift
 
 -}
-effect :: (Monad m, Functor f ) => m (Stream f m r) -> Stream f m r
+effect :: (LMonad m, LFunctor f ) => m (Stream f m r) ⊸ Stream f m r
 effect = Effect
 {-#INLINE effect #-}
 
