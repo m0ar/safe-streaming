@@ -836,23 +836,37 @@ yields :: (LMonad m, LFunctor f) => f r ⊸ Stream f m r
 yields = Step . fmap Return
 {-#INLINE yields #-}
 
+{-| To preserve linearity we cannot discard the longer stream nor its end, 
+ - this data type represents the leftover after zipping.
+ -
+ - Same means the streams were of equal lengths, and contains the end results.
+ - FstRest and SndRest means one stream was longer, and contains one end element
+ - and one leftover stream.
+ -}
+data ZipRest f g m r = Same (r, r) 
+                     | FstRest (Stream f m r) r
+                     | SndRest r (Stream g m r)
 
-zipsWith :: (Monad m, Functor f, Functor g, Functor h)
-  => (forall x y . f x -> g y -> h (x,y))
-  -> Stream f m r -> Stream g m r -> Stream h m r
+zipsWith :: (LMonad m, LFunctor f, LFunctor g, LFunctor h)
+  => (forall x y . f x ⊸ g y ⊸ h (x,y))
+  -> Stream f m r ⊸ Stream g m r ⊸ Stream h m (ZipRest f g m r)
 zipsWith phi s t = loop (s,t) where
-    loop (s1, s2) = Effect (go s1 s2)
-    go s1 s2 = do 
-      e  <- inspect s1
-      e' <- inspect s2
-      case (e,e') of
-        (Left r, _)              -> return (Return r)
-        (_, Left r)              -> return (Return r)
-        (Right fstr, Right gstr) -> return $ Step $ fmap loop (phi fstr gstr)
+  loop :: (Stream _ _ _, Stream _ _ _) ⊸ Stream _ _ (ZipRest _ _ _ _)
+  loop (s1, s2) = Effect $ do
+    e1 <- inspect s1
+    e2 <- inspect s2
+    go e1 e2
+
+  go :: Either _ (_ (Stream _ _ _)) ⊸ Either _ (_ (Stream _ _ _))
+     ⊸ Stream _ _ (ZipRest _ _ _ _)
+  go (Left  r) (Left r') = Return $ Same (r, r')
+  go (Right s) (Left r)  = Return $ FstRest s r
+  go (Left  r) (Right s) = Return $ SndRest r s
+  go (Right fstr) (Right gstr) = Step $ fmap loop (phi fstr gstr)
 {-# INLINABLE zipsWith #-} 
 
-zips :: (Monad m, Functor f, Functor g)
-     => Stream f m r -> Stream g m r -> Stream (Compose f g) m r
+zips :: (LMonad m, LFunctor f, LFunctor g)
+     => Stream f m r ⊸ Stream g m r ⊸ Stream (Compose f g) m (ZipRest f g m r)
 zips = zipsWith go where
   go fx gy = Compose (fmap (\x -> fmap (\y -> (x,y)) gy) fx)
 {-# INLINE zips #-} 
