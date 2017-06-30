@@ -6,6 +6,7 @@ module Data.Functor.LFunctor where
 
 import Data.Linear (flip, liftUnit)
 import Prelude ((.))
+import Data.Functor.Compose (Compose(..))
 
 class LFunctor f where
   fmap :: (a ⊸ b) ⊸ f a ⊸ f b
@@ -22,3 +23,6 @@ class LFunctor f where
 infixl 4 $>
 infixl 4 <$
 infixl 4 <$>
+
+instance (LFunctor f, LFunctor g) => LFunctor (Compose f g) where
+  fmap f (Compose x) = Compose (fmap (fmap f) x)
