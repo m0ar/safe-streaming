@@ -976,7 +976,8 @@ separate str = destroyExposed
 
 
 
-unseparate :: (Monad m, Functor f, Functor g) =>  Stream f (Stream g m) r -> Stream (Sum f g) m r
+unseparate :: (LMonad m, LFunctor f, LFunctor g)
+           =>  Stream f (Stream g m) r -> Stream (Sum f g) m r
 unseparate str = destroyExposed
   str
   (wrap . InL)
