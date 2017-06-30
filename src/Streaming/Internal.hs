@@ -962,12 +962,16 @@ separate odd_even
 
 -}
 
-separate :: (Monad m, Functor f, Functor g) => Stream (Sum f g) m r -> Stream f (Stream g m) r
+separate :: forall m f g r. (LMonad m, LFunctor f, LFunctor g)
+         => Stream (Sum f g) m r ⊸ Stream f (Stream g m) r
 separate str = destroyExposed
   str
-  (\x -> case x of InL fss -> wrap fss; InR gss -> effect (yields gss))
+  split
   (effect . lift)
   return
+  where split :: Sum f g _ ⊸ Stream f (Stream g m) r
+        split (InL fss) = wrap fss
+        split (InR gss) = effect $ yields gss
 {-#INLINABLE separate #-}
 
 
