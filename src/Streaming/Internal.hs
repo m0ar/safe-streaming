@@ -680,11 +680,11 @@ chunksOf n0 = loop where
 
 {- | Make it possible to \'run\' the underlying transformed monad.
 -}
-distribute :: (LMonad m, LFunctor f, LMonadTrans t, 
-              LMFunctor t, LMonad (t (Stream f m)))
-           => Stream f (t m) r -> t (Stream f m) r
+distribute :: forall m f t r. (LMonad m, LFunctor f, LMonadTrans t,
+                         LMFunctor t, LMonad (t (Stream f m)))
+           => Stream f (t m) r ⊸ t (Stream f m) r
 distribute = loop where
-  loop :: Stream _ (_ _) r ⊸ _ (Stream _ _) r 
+  loop :: Stream f (t m) r ⊸ t (Stream f m) r
   loop (Return r)     = lift $ Return r
   loop (Effect tmstr) = hoist lift tmstr >>= loop
   loop (Step   fstr)  = join $ lift $ Step $ fmap (Return . loop) fstr
