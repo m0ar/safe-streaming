@@ -849,33 +849,33 @@ yields = Step . fmap Return
  - FstRest and SndRest means one stream was longer, and contains one end element
  - and one leftover stream.
  -}
-data ZipRest f g m r = Same (r, r) 
-                     | FstRest (Stream f m r) r
-                     | SndRest r (Stream g m r)
-
-zipsWith :: (LMonad m, LFunctor f, LFunctor g, LFunctor h)
-  => (forall x y . f x ⊸ g y ⊸ h (x,y))
-  -> Stream f m r ⊸ Stream g m r ⊸ Stream h m (ZipRest f g m r)
-zipsWith phi s t = loop (s,t) where
-  loop :: (Stream _ _ _, Stream _ _ _) ⊸ Stream _ _ (ZipRest _ _ _ _)
-  loop (s1, s2) = Effect $ do
-    e1 <- inspect s1
-    e2 <- inspect s2
-    go e1 e2
-
-  go :: Either _ (_ (Stream _ _ _)) ⊸ Either _ (_ (Stream _ _ _))
-     ⊸ Stream _ _ (ZipRest _ _ _ _)
-  go (Left  r) (Left r') = Return $ Same (r, r')
-  go (Right s) (Left r)  = Return $ FstRest s r
-  go (Left  r) (Right s) = Return $ SndRest r s
-  go (Right fstr) (Right gstr) = Step $ fmap loop (phi fstr gstr)
-{-# INLINABLE zipsWith #-} 
-
-zips :: (LMonad m, LFunctor f, LFunctor g)
-     => Stream f m r ⊸ Stream g m r ⊸ Stream (Compose f g) m (ZipRest f g m r)
-zips = zipsWith go where
-  go fx gy = Compose (fmap (\x -> fmap (\y -> (x,y)) gy) fx)
-{-# INLINE zips #-} 
+--data ZipRest f g m r = Same (r, r) 
+--                     | FstRest (Stream f m r) r
+--                     | SndRest r (Stream g m r)
+--
+--zipsWith :: (LMonad m, LFunctor f, LFunctor g, LFunctor h)
+--  => (forall x y . f x ⊸ g y ⊸ h (x,y))
+--  -> Stream f m r ⊸ Stream g m r ⊸ Stream h m (ZipRest f g m r)
+--zipsWith phi s t = loop (s,t) where
+--  loop :: (Stream _ _ _, Stream _ _ _) ⊸ Stream _ _ (ZipRest _ _ _ _)
+--  loop (s1, s2) = Effect $ do
+--    e1 <- inspect s1
+--    e2 <- inspect s2
+--    go e1 e2
+--
+--  go :: Either _ (_ (Stream _ _ _)) ⊸ Either _ (_ (Stream _ _ _))
+--     ⊸ Stream _ _ (ZipRest _ _ _ _)
+--  go (Left  r) (Left r') = Return $ Same (r, r')
+--  go (Right s) (Left r)  = Return $ FstRest s r
+--  go (Left  r) (Right s) = Return $ SndRest r s
+--  go (Right fstr) (Right gstr) = Step $ fmap loop (phi fstr gstr)
+--{-# INLINABLE zipsWith #-} 
+--
+--zips :: (LMonad m, LFunctor f, LFunctor g)
+--     => Stream f m r ⊸ Stream g m r ⊸ Stream (Compose f g) m (ZipRest f g m r)
+--zips = zipsWith go where
+--  go fx gy = Compose (fmap (\x -> fmap (\y -> (x,y)) gy) fx)
+--{-# INLINE zips #-} 
 
 
 
@@ -891,11 +891,11 @@ world	world
 
 -}
 
-interleaves
-  :: (Monad m, Applicative h) =>
-     Stream h m r -> Stream h m r -> Stream h m r
-interleaves = zipsWith (liftA2 (,))
-{-# INLINE interleaves #-} 
+--interleaves
+--  :: (Monad m, Applicative h) =>
+--     Stream h m r -> Stream h m r -> Stream h m r
+--interleaves = zipsWith (liftA2 (,))
+--{-# INLINE interleaves #-} 
 
 
 {-| Swap the order of functors in a sum of functors.
@@ -998,40 +998,40 @@ unzips str = destroyExposed
 {-| Group layers in an alternating stream into adjoining sub-streams
     of one type or another.
 -}
-groups :: (Monad m, Functor f, Functor g)
-           => Stream (Sum f g) m r
-           -> Stream (Sum (Stream f m) (Stream g m)) m r
-groups = loop
-  where
-  loop str = do
-    e <- lift $ inspect str
-    case e of
-      Left r -> return r
-      Right ostr -> case ostr of
-        InR gstr -> wrap $ InR (fmap loop (cleanR (wrap (InR gstr))))
-        InL fstr -> wrap $ InL (fmap loop (cleanL (wrap (InL fstr))))
-
-  cleanL  :: (Monad m, Functor f, Functor g) =>
-       Stream (Sum f g) m r -> Stream f m (Stream (Sum f g) m r)
-  cleanL = loop where
-    loop s = do
-     e <- lift $ inspect s
-     case e of
-      Left r           -> return (return r)
-      Right (InL fstr) -> wrap (fmap loop fstr)
-      Right (InR gstr) -> return (wrap (InR gstr))
-
-  cleanR  :: (Monad m, Functor f, Functor g) =>
-       Stream (Sum f g) m r -> Stream g m (Stream (Sum f g) m r)
---  cleanR = fmap (maps switch) . cleanL . maps switch
-  cleanR = loop where
-    loop s = do
-     e <- lift $ inspect s
-     case e of
-      Left r           -> return (return r)
-      Right (InL fstr) -> return (wrap (InL fstr))
-      Right (InR gstr) -> wrap (fmap loop gstr)
-{-#INLINABLE groups #-}
+--groups :: (Monad m, Functor f, Functor g)
+--           => Stream (Sum f g) m r
+--           -> Stream (Sum (Stream f m) (Stream g m)) m r
+--groups = loop
+--  where
+--  loop str = do
+--    e <- lift $ inspect str
+--    case e of
+--      Left r -> return r
+--      Right ostr -> case ostr of
+--        InR gstr -> wrap $ InR (fmap loop (cleanR (wrap (InR gstr))))
+--        InL fstr -> wrap $ InL (fmap loop (cleanL (wrap (InL fstr))))
+--
+--  cleanL  :: (Monad m, Functor f, Functor g) =>
+--       Stream (Sum f g) m r -> Stream f m (Stream (Sum f g) m r)
+--  cleanL = loop where
+--    loop s = do
+--     e <- lift $ inspect s
+--     case e of
+--      Left r           -> return (return r)
+--      Right (InL fstr) -> wrap (fmap loop fstr)
+--      Right (InR gstr) -> return (wrap (InR gstr))
+--
+--  cleanR  :: (Monad m, Functor f, Functor g) =>
+--       Stream (Sum f g) m r -> Stream g m (Stream (Sum f g) m r)
+----  cleanR = fmap (maps switch) . cleanL . maps switch
+--  cleanR = loop where
+--    loop s = do
+--     e <- lift $ inspect s
+--     case e of
+--      Left r           -> return (return r)
+--      Right (InL fstr) -> return (wrap (InL fstr))
+--      Right (InR gstr) -> wrap (fmap loop gstr)
+--{-#INLINABLE groups #-}
     
 -- groupInL :: (Monad m, Functor f, Functor g)
 --                      => Stream (Sum f g) m r
