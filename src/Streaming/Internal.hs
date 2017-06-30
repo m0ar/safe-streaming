@@ -905,8 +905,9 @@ interleaves = zipsWith (liftA2 (,))
 'n'
 "aaa" :> ()
 -}
-switch :: Sum f g r -> Sum g f r
-switch s = case s of InL a -> InR a; InR a -> InL a
+switch :: Sum f g r ⊸ Sum g f r
+switch (InL a) = InR a
+switch (InR a) = InL a
 {-#INLINE switch #-}
 
 
