@@ -1216,12 +1216,12 @@ untilJust act = loop where
       Nothing -> return $ Step $ pure loop
       Just a  -> return $ Return a
     
-    
-cutoff :: (Monad m, Functor f) => Int -> Stream f m r -> Stream f m (Maybe r)
-cutoff = loop where
-  loop 0 str = return Nothing
-  loop n str = do
-      e <- lift $ inspect str
-      case e of
-        Left r -> return (Just r)
-        Right (frest) -> Step $ fmap (loop (n-1)) frest
+-- Same semantics as splitsAt when linear?
+--cutoff :: (LMonad m, LFunctor f) => Int -> Stream f m r -> Stream f m (Maybe r)
+--cutoff = loop where
+--  loop 0 str = return Nothing
+--  loop n str = do
+--      e <- lift $ inspect str
+--      case e of
+--        Left r -> return (Just r)
+--        Right (frest) -> Step $ fmap (loop (n-1)) frest
