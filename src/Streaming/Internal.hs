@@ -1208,13 +1208,13 @@ delays seconds = loop where
 
 -}
 
-untilJust :: (Monad m, Applicative f) => m (Maybe r) -> Stream f m r
+untilJust :: (LMonad m, LApplicative f) => m (Maybe r) -> Stream f m r
 untilJust act = loop where
   loop = Effect $ do
     m <- act
     case m of
       Nothing -> return $ Step $ pure loop
-      Just a -> return $ Return a
+      Just a  -> return $ Return a
     
     
 cutoff :: (Monad m, Functor f) => Int -> Stream f m r -> Stream f m (Maybe r)
