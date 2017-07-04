@@ -24,8 +24,8 @@ module Streaming.Internal (
     -- * Eliminating a stream
     , intercalates
     , concats
-    , iterT
-    , iterTM
+    --, iterT
+    --, iterTM
     , destroy
     , streamFold
   
@@ -39,22 +39,22 @@ module Streaming.Internal (
     , mapsM_
     , run
     , distribute
-    , groups
+    --, groups
 --    , groupInL
   
     -- *  Splitting streams
     , chunksOf
     , splitsAt
-    , takes
-    , cutoff
+    --, takes
+    --, cutoff
     -- , period
     -- , periods
   
     -- * Zipping and unzipping streams
-    , zipsWith
-    , zips
+    --, zipsWith
+    --, zips
     , unzips
-    , interleaves
+    --, interleaves
     , separate
     , unseparate
 
@@ -65,8 +65,8 @@ module Streaming.Internal (
   
     -- * ResourceT and MonadMask help
   
-    , bracketStream
-    , bracket
+    --, bracketStream
+    --, bracket
   
     -- *  For use in implementation
     , unexposed
