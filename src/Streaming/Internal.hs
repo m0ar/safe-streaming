@@ -723,8 +723,8 @@ replicates n f = Effect $ return $ Step $ fmap (\() -> replicates (n-1) f) f
 >>>
 -}
 
-cycles :: (LMonad m, LFunctor f) =>  Stream f m () -> Stream f m r
-cycles s = s >> cycles s
+cycles :: (LMonad m, LFunctor f) => Stream f m () -> Stream f m r
+cycles = forever
 
 
 hoistExposed :: forall m m1 f r. (LFunctor f, LMonad m1)
