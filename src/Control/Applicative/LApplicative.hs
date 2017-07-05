@@ -6,7 +6,8 @@ module Control.Applicative.LApplicative (
   (<**>),
   liftA,
   liftA2,
-  liftA3
+  liftA3,
+  forever
 ) where
 
 import Data.Functor.LFunctor (LFunctor(), (<$>), (<$))
@@ -40,3 +41,7 @@ liftA3 f a b c = f <$> a <*> b <*> c
 {-# INLINEABLE liftA #-}
 {-# INLINEABLE liftA2 #-}
 {-# INLINEABLE liftA3 #-}
+
+forever :: LApplicative f => f () -> f a
+forever a = let a' = a *> a' in a'
+{-# INLINE forever #-}
