@@ -8,13 +8,13 @@ module Control.Monad.LMonad (
   join
 ) where
 
-import Data.Functor.LFunctor (LFunctor())
+import Control.Applicative.LApplicative (LApplicative(), pure)
 import GHC.Base (String())
 import Data.Linear (id)
 
 infixl 1 >>, >>=
 
-class LFunctor m => LMonad m where
+class LApplicative m => LMonad m where
   (>>=) :: m a ⊸ (a ⊸ m b) ⊸ m b
 
   (>>) :: m () ⊸ m a ⊸ m a
@@ -22,6 +22,7 @@ class LFunctor m => LMonad m where
   {-# INLINE (>>) #-}
 
   return :: a ⊸ m a
+  return = pure
 
   fail :: String -> m a
 
