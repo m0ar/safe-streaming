@@ -879,65 +879,65 @@ filter pred = loop where
 -- --     Effect m -> m >>= loop
 -- --     Step (r :> rest) -> return r
 -- -- {-# INLINABLE first #-}
---
--- -- ---------------
--- -- fold
--- -- ---------------
---
--- {- $folds
---     Use these to fold the elements of a 'Stream'.
---
--- >>> S.fold_ (+) 0 id $ S.each [1..0]
--- 50
---
---     The general folds 'fold', fold_', 'foldM' and 'foldM_' are arranged
---     for use with @Control.Foldl@ 'Control.Foldl.purely' and 'Control.Foldl.impurely'
---
--- >>> L.purely fold_ L.sum $ each [1..10]
--- 55
--- >>> L.purely fold_ (liftA3 (,,) L.sum L.product L.list) $ each [1..10]
--- (55,3628800,[1,2,3,4,5,6,7,8,9,10])
---
---     All functions marked with an underscore omit
---     (e.g. @fold_@, @sum_@) the stream's return value in a left-strict pair.
---     They are good for exiting streaming completely,
---     but when you are, e.g. @mapped@-ing over a @Stream (Stream (Of a) m) m r@,
---     which is to be compared with @[[a]]@. Specializing, we have e.g.
---
--- >  mapped sum :: (Monad m, Num n) => Stream (Stream (Of Int)) IO () -> Stream (Of n) IO ()
--- >  mapped (fold mappend mempty id) :: Stream (Stream (Of Int)) IO () -> Stream (Of Int) IO ()
---
--- >>> S.print $ mapped S.sum $ chunksOf 3 $ S.each [1..10]
--- 6
--- 15
--- 24
--- 10
---
--- >>> let three_folds = L.purely S.fold (liftA3 (,,) L.sum L.product L.list)
--- >>> S.print $ mapped three_folds $ chunksOf 3 (each [1..10])
--- (6,6,[1,2,3])
--- (15,120,[4,5,6])
--- (24,504,[7,8,9])
--- (10,10,[10])
--- -}
---
--- {-| Strict fold of a 'Stream' of elements, preserving only the result of the fold, not
---     the return value of the stream.  The third parameter will often be 'id' where a fold
---     is written by hand:
---
--- >>> S.fold_ (+) 0 id $ each [1..10]
--- 55
---
---     It can be used to replace a standard Haskell type with one more suited to
---     writing a strict accumulation function. It is also crucial to the
---     Applicative instance for @Control.Foldl.Fold@
---
--- > Control.Foldl.purely fold :: Monad m => Fold a b -> Stream (Of a) m () -> m b
--- -}
--- fold_ :: Monad m => (x -> a -> x) -> x -> (x -> b) -> Stream (Of a) m r -> m b
--- fold_ step begin done = liftM (\(a:>rest) -> a) . fold step begin done
--- {-#INLINE fold_ #-}
---
+
+-- ---------------
+-- fold
+-- ---------------
+
+{- $folds
+    Use these to fold the elements of a 'Stream'.
+
+>>> S.fold_ (+) 0 id $ S.each [1..0]
+50
+
+    The general folds 'fold', fold_', 'foldM' and 'foldM_' are arranged
+    for use with @Control.Foldl@ 'Control.Foldl.purely' and 'Control.Foldl.impurely'
+
+>>> L.purely fold_ L.sum $ each [1..10]
+55
+>>> L.purely fold_ (liftA3 (,,) L.sum L.product L.list) $ each [1..10]
+(55,3628800,[1,2,3,4,5,6,7,8,9,10])
+
+    All functions marked with an underscore omit
+    (e.g. @fold_@, @sum_@) the stream's return value in a left-strict pair.
+    They are good for exiting streaming completely,
+    but when you are, e.g. @mapped@-ing over a @Stream (Stream (Of a) m) m r@,
+    which is to be compared with @[[a]]@. Specializing, we have e.g.
+
+>  mapped sum :: (Monad m, Num n) => Stream (Stream (Of Int)) IO () -> Stream (Of n) IO ()
+>  mapped (fold mappend mempty id) :: Stream (Stream (Of Int)) IO () -> Stream (Of Int) IO ()
+
+>>> S.print $ mapped S.sum $ chunksOf 3 $ S.each [1..10]
+6
+15
+24
+10
+
+>>> let three_folds = L.purely S.fold (liftA3 (,,) L.sum L.product L.list)
+>>> S.print $ mapped three_folds $ chunksOf 3 (each [1..10])
+(6,6,[1,2,3])
+(15,120,[4,5,6])
+(24,504,[7,8,9])
+(10,10,[10])
+-}
+
+{-| Strict fold of a 'Stream' of elements, preserving only the result of the fold, not
+    the return value of the stream.  The third parameter will often be 'id' where a fold
+    is written by hand:
+
+>>> S.fold_ (+) 0 id $ each [1..10]
+55
+
+    It can be used to replace a standard Haskell type with one more suited to
+    writing a strict accumulation function. It is also crucial to the
+    Applicative instance for @Control.Foldl.Fold@
+
+> Control.Foldl.purely fold :: Monad m => Fold a b -> Stream (Of a) m () -> m b
+-}
+fold_ :: LMonad m => (x -> a -> x) -> x -> (x -> b) -> Stream (LOf a) m () ⊸ m b
+fold_ step begin done = fmap (\(a:>()) -> a) . fold step begin done
+{-#INLINE fold_ #-}
+
 {-| Strict fold of a 'Stream' of elements that preserves the return value.
     The third parameter will often be 'id' where a fold is written by hand:
 
