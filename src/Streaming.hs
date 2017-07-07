@@ -20,29 +20,29 @@ module Streaming
    -- * Transforming streams
    maps,
    mapsM,
-   mapped,
+   --mapped,
    distribute,
-   groups,
+   --groups,
 
    -- * Inspecting a stream
    inspect,
 
    -- * Splitting and joining 'Stream's
    splitsAt,
-   takes,
+   --takes,
    chunksOf,
    concats,
    intercalates,
-   cutoff,
+   --cutoff,
    -- period,
    -- periods,
 
 
    -- * Zipping, unzipping, separating and unseparating streams
-   zipsWith,
-   zips,
+   --zipsWith,
+   --zips,
    unzips,
-   interleaves,
+   --interleaves,
    separate,
    unseparate,
    decompose,
@@ -52,18 +52,18 @@ module Streaming
    mapsM_,
    run,
    streamFold,
-   iterTM,
-   iterT,
+   --iterTM,
+   --iterT,
    destroy,
 
    -- * Base functor for streams of individual items
    Of (..),
-   lazily,
-   strictly,
+   --lazily,
+   --strictly,
 
    -- * ResourceT help
 
-   bracketStream,
+   --bracketStream,
 
    -- * re-exports
    MFunctor(..),
