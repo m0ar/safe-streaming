@@ -1951,17 +1951,17 @@ map f =  maps (\(x :> rest) -> f x :> rest)
 -- {-# INLINE takeWhileM #-}
 --
 --
--- {-| Convert an effectful 'Stream (Of a)' into a list of @as@
---
---     Note: Needless to say, this function does not stream properly.
---     It is basically the same as Prelude 'mapM' which, like 'replicateM',
---     'sequence' and similar operations on traversable containers
---     is a leading cause of space leaks.
---
--- -}
--- toList_ :: Monad m => Stream (Of a) m () -> m [a]
--- toList_ = fold_ (\diff a ls -> diff (a: ls)) id (\diff -> diff [])
--- {-# INLINE toList_ #-}
+{-| Convert an effectful 'Stream (Of a)' into a list of @as@
+
+    Note: Needless to say, this function does not stream properly.
+    It is basically the same as Prelude 'mapM' which, like 'replicateM',
+    'sequence' and similar operations on traversable containers
+    is a leading cause of space leaks.
+
+-}
+toList_ :: LMonad m => Stream (LOf a) m () ⊸ m [a]
+toList_ = fold_ (\diff a ls -> diff (a:ls)) id (\diff -> diff [])
+{-# INLINE toList_ #-}
 
 
 {-| Convert an effectful 'Stream' into a list alongside the return value
