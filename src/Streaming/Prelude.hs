@@ -53,12 +53,12 @@
 {-# LANGUAGE RebindableSyntax #-}
 module Streaming.Prelude (
     -- * Types
---     Of (..)
+     LOf (..)
 --
 --     -- * Introducing streams of elements
 --     -- $producers
 --     , yield
-      each
+      , each
 --     , stdinLn
 --     , readLn
 --     , fromHandle
@@ -113,7 +113,7 @@ module Streaming.Prelude (
 --     , takeWhile
 -- --    , takeWhile'
 --     , takeWhileM
---     , drop
+     , drop
 --     , dropWhile
 --     , concat
 --     -- , elemIndices
@@ -154,10 +154,10 @@ module Streaming.Prelude (
 --
 --     -- * Folds
 --     -- $folds
---     , fold
---     , fold_
---     , foldM
---     , foldM_
+     , fold
+     , fold_
+     -- , foldM
+     -- , foldM_
 --     , all
 --     , all_
 --     , any
@@ -636,40 +636,40 @@ import Data.Functor.LOf
 -- drained :: (Monad m, Monad (t m), Functor (t m), MonadTrans t) => t m (Stream (Of a) m r) -> t m r
 -- drained = join . fmap (lift . effects)
 -- {-#INLINE drained #-}
---
--- -- ---------------
--- -- drop
--- -- ---------------
--- {-|  Ignore the first n elements of a stream, but carry out the actions
---
--- >>> S.toList $ S.drop 2 $  S.replicateM 5 getLine
--- a<Enter>
--- b<Enter>
--- c<Enter>
--- d<Enter>
--- e<Enter>
--- ["c","d","e"] :> ()
---
---      Because it retains the final return value, @drop n@  is a suitable argument
---      for @maps@:
---
--- >>> S.toList $ concats $ maps (S.drop 4) $ chunksOf 5 $ each [1..20]
--- [5,10,15,20] :> ()
---
---
---
---   -}
---
--- drop :: (Monad m) => Int -> Stream (Of a) m r -> Stream (Of a) m r
--- drop n str | n <= 0 = str
--- drop n str = loop n str where
---   loop 0 stream = stream
---   loop n stream = case stream of
---       Return r       -> Return r
---       Effect ma      -> Effect (liftM (loop n) ma)
---       Step (a :> as) -> loop (n-1) as
--- {-# INLINABLE drop #-}
---
+
+-- ---------------
+-- drop
+-- ---------------
+{-|  Ignore the first n elements of a stream, but carry out the actions
+
+>>> S.toList $ S.drop 2 $  S.replicateM 5 getLine
+a<Enter>
+b<Enter>
+c<Enter>
+d<Enter>
+e<Enter>
+["c","d","e"] :> ()
+
+     Because it retains the final return value, @drop n@  is a suitable argument
+     for @maps@:
+
+>>> S.toList $ concats $ maps (S.drop 4) $ chunksOf 5 $ each [1..20]
+[5,10,15,20] :> ()
+
+
+
+  -}
+
+drop :: forall a m r. LMonad m => Int -> Stream (LOf a) m r ⊸ Stream (LOf a) m r
+drop n str | n <= 0 = str
+drop n str = loop n str where
+  loop :: Int -> Stream (LOf a) m r ⊸ Stream (LOf a) m r
+  loop 0 stream = stream
+  loop n (Return r) = Return r
+  loop n (Effect m) = Effect $ fmap (loop n) m
+  loop n (Step (a :> as)) = loop (n-1) as
+{-# INLINABLE drop #-}
+
 -- -- ---------------
 -- -- dropWhile
 -- -- ---------------
