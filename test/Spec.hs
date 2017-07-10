@@ -4,10 +4,8 @@ module Main where
 import Streaming.Prelude
 import Prelude hiding (filter, map, drop)
 import Test.HUnit
-import qualified Data.Foldable as Foldable
 import System.Exit
 import Data.Function ((&))
-import System.IO.Unsafe (unsafePerformIO)
 
 main :: IO ()
 main = do
