@@ -177,7 +177,7 @@ module Streaming.Prelude (
 --     , length
 --     , length_
      , toList
---     , toList_
+     , toList_
 --     , mconcat
 --     , mconcat_
 --     , minimum
