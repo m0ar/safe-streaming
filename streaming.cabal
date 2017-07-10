@@ -202,13 +202,22 @@ library
   exposed-modules:     Streaming,
                        Streaming.Prelude,
                        Streaming.Internal,
+                       Control.Applicative.LApplicative
+                       Control.Monad.LMonad
+                       Control.Monad.Morph.LMorph
+                       Control.Monad.Trans.LClass
+                       Data.Functor.LFunctor
+                       Data.Functor.LOf
+                       Data.Linear
 
     -- other-modules:
   other-extensions:    RankNTypes, CPP,
                        StandaloneDeriving, FlexibleContexts,
                        DeriveDataTypeable, DeriveFoldable,
                        DeriveFunctor, DeriveTraversable,
-                       UndecidableInstances
+                       UndecidableInstances, PartialTypeSignatures,
+                       ExplicitForAll, GADTs,
+                       RebindableSyntax, ScopedTypeVariables
 
   build-depends:       base >=4.6
                      , mtl >=2.1
