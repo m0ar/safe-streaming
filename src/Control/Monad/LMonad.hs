@@ -1,5 +1,6 @@
 {-# LANGUAGE Trustworthy #-}
 {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE RebindableSyntax #-}
 
 module Control.Monad.LMonad (
   LMonad,
@@ -28,6 +29,12 @@ class LApplicative m => LMonad m where
 
 join :: LMonad m => m (m a) ⊸ m a
 join x = x >>= id
+
+ap :: LMonad m => m (a ⊸ b) ⊸ m a ⊸ m b
+ap m1 m2 = do
+  x1 <- m1
+  x2 <- m2
+  return (x1 x2)
 
 instance LMonad [] where
   xs >>= f = [y | x <- xs, y <- f x]
