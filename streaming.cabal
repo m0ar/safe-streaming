@@ -202,7 +202,6 @@ library
   exposed-modules:     Streaming,
                        Streaming.Prelude,
                        Streaming.Internal,
-                       Data.Functor.Of
 
     -- other-modules:
   other-extensions:    RankNTypes, CPP,

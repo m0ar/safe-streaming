@@ -101,7 +101,6 @@ import Control.Monad.Base
 import Control.Monad.Trans.Resource
 import Control.Monad.Catch hiding (bracket, onException)
 import Control.Monad.Trans.Control
-import Data.Functor.Of
 import Data.IORef
 import Data.Linear (liftUnit)
 {- $stream
