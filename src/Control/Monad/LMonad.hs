@@ -28,3 +28,8 @@ class LApplicative m => LMonad m where
 
 join :: LMonad m => m (m a) ⊸ m a
 join x = x >>= id
+
+instance LMonad [] where
+  xs >>= f = [y | x <- xs, y <- f x]
+
+  fail _ = []
