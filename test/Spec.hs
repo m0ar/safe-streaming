@@ -6,6 +6,7 @@ import Prelude hiding (filter, map, drop)
 import Test.HUnit
 import System.Exit
 import Data.Function ((&))
+import Data.Functor.Identity
 
 main :: IO ()
 main = do
@@ -19,7 +20,7 @@ main = do
 tests = TestList [TestLabel "basic stream arithmetics" stream_basic]
 
 stream_basic = 
-  let xs :: [Integer] = concat . (toList_ :: _ ⊸ [[Integer]]) $ 
+  let xs :: [Integer] = concat . (toList_ :: _ ⊸ Identity [Integer]) $ 
                      each [1..100]
                    & filter even
                    & map (*2)
