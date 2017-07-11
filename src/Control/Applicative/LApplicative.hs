@@ -12,6 +12,7 @@ module Control.Applicative.LApplicative (
 
 import Data.Functor.LFunctor (LFunctor(), (<$>), (<$))
 import Data.Linear (($), id, liftUnit, flip)
+import Data.Functor.Identity
 
 class LFunctor f => LApplicative f where
   pure :: a ⊸ f a
@@ -45,3 +46,7 @@ liftA3 f a b c = f <$> a <*> b <*> c
 forever :: LApplicative f => f () -> f a
 forever a = let a' = a *> a' in a'
 {-# INLINE forever #-}
+
+instance LApplicative Identity where
+  pure = Identity
+  Identity f <*> Identity a = Identity $ f a

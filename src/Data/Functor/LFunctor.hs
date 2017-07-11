@@ -8,6 +8,7 @@ import Data.Linear (flip, liftUnit, ($))
 import Prelude ((.))
 import Data.Functor.Compose (Compose(..))
 import Data.Functor.Sum (Sum(..))
+import Data.Functor.Identity (Identity(..))
 
 class LFunctor f where
   fmap :: (a ⊸ b) ⊸ f a ⊸ f b
@@ -31,3 +32,6 @@ instance (LFunctor f, LFunctor g) => LFunctor (Compose f g) where
 instance (LFunctor f, LFunctor g) => LFunctor (Sum f g) where
   fmap f (InL x) = InL $ fmap f x
   fmap f (InR y) = InR $ fmap f y
+
+instance LFunctor Identity where
+  fmap f (Identity a) = Identity $ f a

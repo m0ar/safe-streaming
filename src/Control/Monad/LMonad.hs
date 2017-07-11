@@ -12,6 +12,7 @@ module Control.Monad.LMonad (
 import Control.Applicative.LApplicative (LApplicative(), pure)
 import GHC.Base (String())
 import Data.Linear (id)
+import Data.Functor.Identity
 
 infixl 1 >>, >>=
 
@@ -35,3 +36,6 @@ ap m1 m2 = do
   x1 <- m1
   x2 <- m2
   return (x1 x2)
+
+instance LMonad Identity where
+  (Identity a) >>= k = k a
