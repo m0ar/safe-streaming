@@ -35,8 +35,3 @@ ap m1 m2 = do
   x1 <- m1
   x2 <- m2
   return (x1 x2)
-
-instance LMonad [] where
-  xs >>= f = [y | x <- xs, y <- f x]
-
-  fail _ = []

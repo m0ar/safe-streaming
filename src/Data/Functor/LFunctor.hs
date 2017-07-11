@@ -5,7 +5,7 @@
 module Data.Functor.LFunctor where
 
 import Data.Linear (flip, liftUnit, ($))
-import Prelude ((.), map)
+import Prelude ((.))
 import Data.Functor.Compose (Compose(..))
 import Data.Functor.Sum (Sum(..))
 
@@ -31,7 +31,3 @@ instance (LFunctor f, LFunctor g) => LFunctor (Compose f g) where
 instance (LFunctor f, LFunctor g) => LFunctor (Sum f g) where
   fmap f (InL x) = InL $ fmap f x
   fmap f (InR y) = InR $ fmap f y
-
-instance LFunctor [] where
-  {-# INLINE fmap #-}
-  fmap = map

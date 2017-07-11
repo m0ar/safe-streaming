@@ -45,11 +45,3 @@ liftA3 f a b c = f <$> a <*> b <*> c
 forever :: LApplicative f => f () -> f a
 forever a = let a' = a *> a' in a'
 {-# INLINE forever #-}
-
-instance LApplicative [] where
-  {-# INLINE pure #-}
-  pure x = [x]
-  {-# INLINE (<*>) #-}
-  fs <*> xs = [f x | x <- xs, f <- fs]
-  {-# INLINE (*>) #-}
-  xs *> ys = [y | _ <- xs, y <- ys]
