@@ -14,6 +14,10 @@ import Data.Data
 import Data.Typeable
 
 -- | A left-strict pair; the base functor for streams of individual elements.
+-- Unrestricted in its first argument, this allows us to write intuitive semantics
+-- for drop, filter and so on in the streaming prelude while still being an LFunctor.
+-- This is neat because it allows us to keep the monadic actions linear, but not the
+-- resulting values (only the first one can cause critical problems with streaming).
 data LOf a b where (:>) :: a -> b ⊸ LOf a b
     deriving (Data, Eq, Foldable, Ord,
               Read, Show, Traversable, Typeable)
