@@ -57,8 +57,8 @@ module Streaming.Prelude (
 --
 --     -- * Introducing streams of elements
 --     -- $producers
---     , yield
-      , each
+     , yield
+     , each
 --     , stdinLn
 --     , readLn
 --     , fromHandle
@@ -128,7 +128,7 @@ module Streaming.Prelude (
 --
 --
 --     -- * Splitting and inspecting streams of elements
---     , next
+     , next
 --     , uncons
 --     , splitAt
 --     , split
@@ -229,9 +229,9 @@ module Streaming.Prelude (
 --
 --     -- * Interoperation
 --     , reread
---
---     -- * Basic Type
---     , Stream
+
+     -- * Basic Type
+     , Stream
 
   ) where
 import Streaming.Internal
@@ -1390,37 +1390,35 @@ map f =  maps (\(x :> rest) -> f x :> rest)
 --                  Nothing_
 --                  (\m -> case m of Nothing_ -> Nothing; Just_ r -> Just r)
 -- {-#INLINE maximum_ #-}
---
--- {-| The standard way of inspecting the first item in a stream of elements, if the
---      stream is still \'running\'. The @Right@ case contains a
---      Haskell pair, where the more general @inspect@ would return a left-strict pair.
---      There is no reason to prefer @inspect@ since, if the @Right@ case is exposed,
---      the first element in the pair will have been evaluated to whnf.
---
--- > next :: Monad m => Stream (Of a) m r -> m (Either r (a, Stream (Of a) m r))
--- > inspect :: Monad m => Stream (Of a) m r -> m (Either r (Of a (Stream (Of a) m r)))
---
---      Interoperate with @pipes@ producers thus:
---
--- > Pipes.unfoldr Stream.next :: Stream (Of a) m r -> Producer a m r
--- > Stream.unfoldr Pipes.next :: Producer a m r -> Stream (Of a) m r
---
---      Similarly:
---
--- > IOStreams.unfoldM (liftM (either (const Nothing) Just) . next) :: Stream (Of a) IO b -> IO (InputStream a)
--- > Conduit.unfoldM (liftM (either (const Nothing) Just) . next)   :: Stream (Of a) m r -> Source a m r
---
---      But see 'uncons', which is better fitted to these @unfoldM@s
--- -}
--- next :: Monad m => Stream (Of a) m r -> m (Either r (a, Stream (Of a) m r))
--- next = loop where
---   loop stream = case stream of
---     Return r         -> return (Left r)
---     Effect m          -> m >>= loop
---     Step (a :> rest) -> return (Right (a,rest))
--- {-# INLINABLE next #-}
---
---
+
+{-| The standard way of inspecting the first item in a stream of elements, if the
+     stream is still \'running\'. The @Right@ case contains a
+     Haskell pair, where the more general @inspect@ would return a left-strict pair.
+     There is no reason to prefer @inspect@ since, if the @Right@ case is exposed,
+     the first element in the pair will have been evaluated to whnf.
+
+> next :: Monad m => Stream (Of a) m r -> m (Either r (a, Stream (Of a) m r))
+> inspect :: Monad m => Stream (Of a) m r -> m (Either r (Of a (Stream (Of a) m r)))
+
+     Interoperate with @pipes@ producers thus:
+
+> Pipes.unfoldr Stream.next :: Stream (Of a) m r -> Producer a m r
+> Stream.unfoldr Pipes.next :: Producer a m r -> Stream (Of a) m r
+
+     Similarly:
+
+> IOStreams.unfoldM (liftM (either (const Nothing) Just) . next) :: Stream (Of a) IO b -> IO (InputStream a)
+> Conduit.unfoldM (liftM (either (const Nothing) Just) . next)   :: Stream (Of a) m r -> Source a m r
+
+     But see 'uncons', which is better fitted to these @unfoldM@s
+-}
+next :: LMonad m => Stream (LOf a) m r ⊸ m (Either r (a, Stream (LOf a) m r))
+next (Return r) = return $ Left r
+next (Effect m) = m >>= next
+next (Step (a :> rest)) = return $ Right (a, rest)
+{-# INLINABLE next #-}
+
+
 -- {-| Exhaust a stream deciding whether @a@ was an element.
 --
 -- -}
@@ -2079,35 +2077,35 @@ toList = fold (\diff a ls -> diff (a: ls)) id (\diff -> diff [])
 --     Effect m         -> Effect (liftM loop m)
 --     Step (a :> rest) -> Step (loop rest <$ f a)
 -- {-#INLINABLE with #-}
---
--- -- ---------------------------------------
--- -- yield
--- -- ---------------------------------------
---
--- {-| A singleton stream
---
--- >>> stdoutLn $ yield "hello"
--- hello
---
--- >>> S.sum $ do {yield 1; yield 2; yield 3}
--- 6
---
--- >>> let number = lift (putStrLn "Enter a number:") >> lift readLn >>= yield :: Stream (Of Int) IO ()
--- >>> S.toList $ do {number; number; number}
--- Enter a number:
--- 1<Enter>
--- Enter a number:
--- 2<Enter>
--- Enter a number:
--- 3<Enter>
--- [1,2,3] :> ()
---
--- -}
---
--- yield :: Monad m => a -> Stream (Of a) m ()
--- yield a = Step (a :> Return ())
--- {-# INLINE yield #-}
---
+
+-- ---------------------------------------
+-- yield
+-- ---------------------------------------
+
+{-| A singleton stream
+
+>>> stdoutLn $ yield "hello"
+hello
+
+>>> S.sum $ do {yield 1; yield 2; yield 3}
+6
+
+>>> let number = lift (putStrLn "Enter a number:") >> lift readLn >>= yield :: Stream (Of Int) IO ()
+>>> S.toList $ do {number; number; number}
+Enter a number:
+1<Enter>
+Enter a number:
+2<Enter>
+Enter a number:
+3<Enter>
+[1,2,3] :> ()
+
+-}
+
+yield :: LMonad m => a -> Stream (LOf a) m ()
+yield a = Step $ a :> Return ()
+{-# INLINE yield #-}
+
 -- -- | Zip two 'Streams's
 -- zip :: Monad m
 --     => (Stream (Of a) m r)
