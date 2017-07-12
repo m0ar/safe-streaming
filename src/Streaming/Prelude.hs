@@ -309,63 +309,63 @@ import Data.Functor.LOf
 
 
  -}
--- lazily :: Of a b -> (a,b)
--- lazily = \(a:>b) -> (a,b)
--- {-# INLINE lazily #-}
---
--- {-| Convert a standard Haskell pair into a left-strict pair  -}
--- strictly :: (a,b) -> Of a b
--- strictly = \(a,b) -> a :> b
--- {-# INLINE strictly #-}
---
--- {-| @fst'@ and @snd'@ extract the first and second element of a pair
---
--- >>> S.fst' (1:>"hi")
--- 1
--- >>> S.snd' (1:>"hi")
--- "hi"
---
---
---      They are contained in the @_first@ and @_second@ lenses,
---      if any lens library is in scope
---
--- >>> import Lens.Micro
--- >>> (1:>"hi") ^. S._first
--- 1
--- >>> (1:>"hi") ^. S._second
--- "hi"
---
---  -}
---
--- fst' :: Of a b -> a
--- fst' (a :> b) = a
--- {-#INLINE fst' #-}
--- snd' :: Of a b -> b
--- snd' (a :> b) = b
--- {-#INLINE snd' #-}
---
--- {-| Map a function over the first element of an @Of@ pair
---
--- >>> S.mapOf even (1:>"hi")
--- False :> "hi"
---
---      @mapOf@ is just @first@ from the @Bifunctor@ instance
---
--- >>> first even (1:>"hi")
--- False :> "hi"
---
---      and is contained in the @_first@ lens
---
--- >>> import Lens.Micro
--- >>> over S._first even (1:>"hi")
--- False :> "hi"
---
---  -}
---
--- mapOf :: (a -> b) -> Of a r -> Of b r
--- mapOf f (a:> b) = (f a :> b)
--- {-#INLINE mapOf #-}
---
+lazily :: LOf a b -> (a,b)
+lazily (a :> b)= (a,b)
+{-# INLINE lazily #-}
+
+{-| Convert a standard Haskell pair into a left-strict pair  -}
+strictly :: (a,b) -> LOf a b
+strictly (a, b) = a :> b
+{-# INLINE strictly #-}
+
+{-| @fst'@ and @snd'@ extract the first and second element of a pair
+
+>>> S.fst' (1:>"hi")
+1
+>>> S.snd' (1:>"hi")
+"hi"
+
+
+     They are contained in the @_first@ and @_second@ lenses,
+     if any lens library is in scope
+
+>>> import Lens.Micro
+>>> (1:>"hi") ^. S._first
+1
+>>> (1:>"hi") ^. S._second
+"hi"
+
+ -}
+
+--fst' :: Of a b -> a
+--fst' (a :> b) = a
+--{-#INLINE fst' #-}
+snd' :: LOf a b -> b
+snd' (a :> b) = b
+{-#INLINE snd' #-}
+
+{-| Map a function over the first element of an @Of@ pair
+
+>>> S.mapOf even (1:>"hi")
+False :> "hi"
+
+     @mapOf@ is just @first@ from the @Bifunctor@ instance
+
+>>> first even (1:>"hi")
+False :> "hi"
+
+     and is contained in the @_first@ lens
+
+>>> import Lens.Micro
+>>> over S._first even (1:>"hi")
+False :> "hi"
+
+ -}
+
+mapOf :: (a -> b) -> LOf a r -> LOf b r
+mapOf f (a :> b) = f a :> b
+{-#INLINE mapOf #-}
+
 -- {-| A lens into the first element of a left-strict pair -}
 -- _first :: Functor f => (a -> f a') -> Of a b -> f (Of a' b)
 -- _first afb (a:>b) = fmap (\c -> (c:>b)) (afb a)
