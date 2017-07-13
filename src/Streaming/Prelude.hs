@@ -86,7 +86,7 @@ module Streaming.Prelude (
 --     , print
 --     , toHandle
 --     , writeFile
---     , effects
+     , effects
 --     , erase
 --     , drained
 --
@@ -713,36 +713,34 @@ drop n str = loop n str where
 each :: (LMonad m, Foldable.Foldable f) => f a ⊸ Stream (LOf a) m ()
 each = Foldable.foldr (\a p -> Step (a :> p)) (Return ())
 {-# INLINABLE each #-}
---
---
--- -- ---------------
--- -- effects
--- -- ---------------
---
--- {- | Reduce a stream, performing its actions but ignoring its elements.
---
--- >>> rest <- S.effects $ S.splitAt 2 $ each [1..5]
--- >>> S.print rest
--- 3
--- 4
--- 5
---
---     'effects' should be understood together with 'copy' and is subject to the rules
---
--- > S.effects . S.copy       = id
--- > hoist S.effects . S.copy = id
---
---     The similar @effects@ and @copy@ operations in @Data.ByteString.Streaming@ obey the same rules.
---
--- -}
--- effects :: Monad m => Stream (Of a) m r -> m r
--- effects = loop where
---   loop stream = case stream of
---     Return r         -> return r
---     Effect m         -> m >>= loop
---     Step (_ :> rest) -> loop rest
--- {-#INLINABLE effects #-}
---
+
+
+-- ---------------
+-- effects
+-- ---------------
+
+{- | Reduce a stream, performing its actions but ignoring its elements.
+
+>>> rest <- S.effects $ S.splitAt 2 $ each [1..5]
+>>> S.print rest
+3
+4
+5
+
+    'effects' should be understood together with 'copy' and is subject to the rules
+
+> S.effects . S.copy       = id
+> hoist S.effects . S.copy = id
+
+    The similar @effects@ and @copy@ operations in @Data.ByteString.Streaming@ obey the same rules.
+
+-}
+effects :: LMonad m => Stream (LOf a) m r ⊸ m r
+effects (Return r) = return r
+effects (Effect m) = m >>= effects
+effects (Step (_ :> rest)) = effects rest
+{-#INLINABLE effects #-}
+
 -- {-| Exhaust a stream remembering only whether @a@ was an element.
 --
 -- -}
