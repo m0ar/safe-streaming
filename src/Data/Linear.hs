@@ -18,3 +18,5 @@ infixr 0 $
 f $ x = f x
 {-# INLINE ($) #-}
 
+(.) :: (b ⊸ c) ⊸ (a ⊸ b) ⊸ a ⊸ c
+(.) f g a = f $ g a
