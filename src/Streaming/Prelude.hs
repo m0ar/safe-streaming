@@ -238,6 +238,7 @@ import Streaming.Internal
 
 import Control.Monad.LMonad
 import Data.Functor.LFunctor
+import Control.Applicative.LApplicative
 
 import Data.Data ( Data, Typeable )
 import Data.Functor.Identity
@@ -572,27 +573,26 @@ cons :: LMonad m => a -> Stream (LOf a) m r ⊸ Stream (LOf a) m r
 cons a str = Step (a :> str)
 {-# INLINE cons #-}
 
--- {- | Cycle repeatedly through the layers of a stream, /ad inf./ This
---      function is functor-general
---
--- > cycle = forever
---
--- >>> rest <- S.print $ S.splitAt 3 $ S.cycle (yield True >> yield False)
--- True
--- False
--- True
--- >>> S.print $ S.take 3 rest
--- False
--- True
--- False
---
--- -}
---
--- cycle :: (Monad m, Functor f) => Stream f m r -> Stream f m s
--- cycle str = loop where loop = str >> loop
--- {-#INLINABLE cycle #-}
---
---
+{- | Cycle repeatedly through the layers of a stream, /ad inf./ This
+     function is functor-general
+
+> cycle = forever
+
+>>> rest <- S.print $ S.splitAt 3 $ S.cycle (yield True >> yield False)
+True
+False
+True
+>>> S.print $ S.take 3 rest
+False
+True
+False
+
+-}
+cycle :: (LMonad m, LFunctor f) => Stream f m () ⊸ Stream f m s
+cycle = forever
+{-#INLINABLE cycle #-}
+
+
 -- {-| Interpolate a delay of n seconds between yields.
 -- -}
 -- delay :: MonadIO m => Double -> Stream (Of a) m r -> Stream (Of a) m r
