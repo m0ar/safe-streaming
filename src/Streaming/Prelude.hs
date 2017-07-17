@@ -97,13 +97,13 @@ module Streaming.Prelude (
 --     , mapM
 --     , maps
 --     , mapped
---     , for
+     , for
 --     , with
 --     , subst
 --     , copy
 --     , duplicate
 --     , store
---     , chain
+     , chain
 --     , sequence
      , filter
 --     , filterM
@@ -115,7 +115,7 @@ module Streaming.Prelude (
 --     , takeWhileM
      , drop
 --     , dropWhile
---     , concat
+     , concat
 --     -- , elemIndices
 --     -- , findIndices
 --     , scan
@@ -528,35 +528,35 @@ chain f = loop where
     return $ Step $ a :> loop rest
 {-# INLINABLE chain #-}
 
--- {-| Make a stream of traversable containers into a stream of their separate elements.
---     This is just
---
--- > concat str = for str each
---
--- >>> S.print $ S.concat (each ["xy","z"])
--- 'x'
--- 'y'
--- 'z'
---
---     Note that it also has the effect of 'Data.Maybe.catMaybes', 'Data.Either.rights'
---     'map snd' and such-like operations.
---
--- >>> S.print $ S.concat $ S.each [Just 1, Nothing, Just 2]
--- 1
--- 2
--- >>> S.print $  S.concat $ S.each [Right 1, Left "Error!", Right 2]
--- 1
--- 2
--- >>> S.print $ S.concat $ S.each [('A',1), ('B',2)]
--- 1
--- 2
---
--- -}
---
--- concat :: (Monad m, Foldable.Foldable f) => Stream (Of (f a)) m r -> Stream (Of a) m r
--- concat str = for str each
--- {-# INLINE concat #-}
---
+{-| Make a stream of traversable containers into a stream of their separate elements.
+    This is just
+
+> concat str = for str each
+
+>>> S.print $ S.concat (each ["xy","z"])
+'x'
+'y'
+'z'
+
+    Note that it also has the effect of 'Data.Maybe.catMaybes', 'Data.Either.rights'
+    'map snd' and such-like operations.
+
+>>> S.print $ S.concat $ S.each [Just 1, Nothing, Just 2]
+1
+2
+>>> S.print $  S.concat $ S.each [Right 1, Left "Error!", Right 2]
+1
+2
+>>> S.print $ S.concat $ S.each [('A',1), ('B',2)]
+1
+2
+
+-}
+concat :: (LMonad m, Foldable.Foldable f)
+       => Stream (LOf (f a)) m r ⊸ Stream (LOf a) m r
+concat str = for str each
+{-# INLINE concat #-}
+
 -- {-| The natural @cons@ for a @Stream (Of a)@.
 --
 -- > cons a stream = yield a >> stream
@@ -1064,23 +1064,24 @@ fold step begin done str =  fold_loop str begin
 --     Effect m       -> m >>= loop
 --     Step (a :> as) -> step a (loop as)
 -- {-# INLINABLE foldrM #-}
---
--- -- ---------------
--- -- for
--- -- ---------------
---
--- -- | @for@ replaces each element of a stream with an associated stream. Note that the
--- -- associated stream may layer any functor.
--- for :: (Monad m, Functor f) => Stream (Of a) m r -> (a -> Stream f m x) -> Stream f m r
--- for str0 act = loop str0 where
---   loop str = case str of
---     Return r         -> Return r
---     Effect m          -> Effect $ liftM loop m
---     Step (a :> rest) -> do
---       act a
---       loop rest
--- {-# INLINABLE for #-}
---
+
+-- ---------------
+-- for
+-- ---------------
+
+-- | @for@ replaces each element of a stream with an associated stream. Note that the
+-- associated stream may layer any functor.
+for :: forall f a m r x. (LMonad m, LFunctor f)
+    => Stream (LOf a) m r ⊸ (a -> Stream f m ()) -> Stream f m r
+for str0 act = loop str0 where
+  loop :: Stream (LOf a) m r ⊸ Stream f m r
+  loop (Return r) = Return r
+  loop (Effect m) = Effect $ fmap loop m
+  loop (Step (a :> rest)) = do
+    act a
+    loop rest
+{-# INLINABLE for #-}
+
 -- -- -| Group layers of any functor by comparisons on a preliminary annotation
 --
 -- -- groupedBy
