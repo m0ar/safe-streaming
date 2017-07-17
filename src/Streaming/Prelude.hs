@@ -132,9 +132,9 @@ module Streaming.Prelude (
 --     , uncons
 --     , splitAt
 --     , split
---     , breaks
---     , break
---     , breakWhen
+     , breaks
+     , break
+     , breakWhen
 --     , span
 --     , group
 --     , groupBy
@@ -423,91 +423,90 @@ any thus = loop False where
       -- else loop False rest
 -- {-#INLINABLE any_ #-}
 
--- {-| Break a sequence upon meeting element falls under a predicate,
---     keeping it and the rest of the stream as the return value.
---
--- >>> rest <- S.print $ S.break even $ each [1,1,2,3]
--- 1
--- 1
--- >>> S.print rest
--- 2
--- 3
---
--- -}
---
--- break :: Monad m => (a -> Bool) -> Stream (Of a) m r
---       -> Stream (Of a) m (Stream (Of a) m r)
--- break pred = loop where
---   loop str = case str of
---     Return r         -> Return (Return r)
---     Effect m          -> Effect $ liftM loop m
---     Step (a :> rest) -> if (pred a)
---       then Return (Step (a :> rest))
---       else Step (a :> loop rest)
--- {-# INLINABLE break #-}
---
--- {-| Yield elements, using a fold to maintain state, until the accumulated
---    value satifies the supplied predicate. The fold will then be short-circuited
---    and the element that breaks it will be put after the break.
---    This function is easiest to use with 'Control.Foldl.purely'
---
--- >>>  rest <- each [1..10] & L.purely S.breakWhen L.sum (>10) & S.print
--- 1
--- 2
--- 3
--- 4
--- >>> S.print rest
--- 5
--- 6
--- 7
--- 8
--- 9
--- 10
---
--- -}
--- breakWhen :: Monad m => (x -> a -> x) -> x -> (x -> b) -> (b -> Bool) -> Stream (Of a) m r -> Stream (Of a) m (Stream (Of a) m r)
--- breakWhen step begin done pred = loop0 begin
---   where
---     loop0 x stream = case stream of
---         Return r -> return (return r)
---         Effect mn  -> Effect $ liftM (loop0 x) mn
---         Step (a :> rest) -> loop a (step x a) rest
---     loop a !x stream = do
---       if pred (done x)
---         then return (yield a >> stream)
---         else case stream of
---           Return r -> yield a >> return (return r)
---           Effect mn  -> Effect $ liftM (loop a x) mn
---           Step (a' :> rest) -> do
---             yield a
---             loop a' (step x a') rest
--- {-# INLINABLE breakWhen #-}
---
--- -- -- Break during periods where the predicate is not satisfied, grouping the periods when it is.
--- --
--- -- >>> S.print $ mapped S.toList $ S.breaks not $ S.each [False,True,True,False,True,True,False]
--- -- [True,True]
--- -- [True,True]
--- -- >>> S.print $ mapped S.toList $ S.breaks id $ S.each [False,True,True,False,True,True,False]
--- -- [False]
--- -- [False]
--- -- [False]
--- --
--- -- -}
--- breaks
---   :: Monad m =>
---      (a -> Bool) -> Stream (Of a) m r -> Stream (Stream (Of a) m) m r
--- breaks thus  = loop  where
---   loop stream = Effect $ do
---     e <- next stream
---     return $ case e of
---       Left   r      -> Return r
---       Right (a, p') ->
---        if not (thus a)
---           then Step $ fmap loop (yield a >> break thus p')
---           else loop p'
--- {-#INLINABLE breaks #-}
---
+{-| Break a sequence upon meeting element falls under a predicate,
+    keeping it and the rest of the stream as the return value.
+
+>>> rest <- S.print $ S.break even $ each [1,1,2,3]
+1
+1
+>>> S.print rest
+2
+3
+
+-}
+break :: forall a m r. LMonad m
+      => (a -> Bool) -> Stream (LOf a) m r
+      ⊸ Stream (LOf a) m (Stream (LOf a) m r)
+break pred = loop where
+  loop :: Stream (LOf a) m r ⊸ Stream (LOf a) m (Stream (LOf a) m r)
+  loop (Return r) = Return $ Return r
+  loop (Effect m) = Effect $ fmap loop m
+  loop (Step (a :> rest)) = case pred a of
+    True  -> Return $ Step (a :> rest)
+    False -> Step $ a :> loop rest
+{-# INLINABLE break #-}
+
+{-| Yield elements, using a fold to maintain state, until the accumulated
+   value satifies the supplied predicate. The fold will then be short-circuited
+   and the element that breaks it will be put after the break.
+   This function is easiest to use with 'Control.Foldl.purely'
+
+>>>  rest <- each [1..10] & L.purely S.breakWhen L.sum (>10) & S.print
+1
+2
+3
+4
+>>> S.print rest
+5
+6
+7
+8
+9
+10
+
+-}
+breakWhen :: forall x a b m r. LMonad m
+          => (x -> a -> x) -> x -> (x -> b) -> (b -> Bool)
+          -> Stream (LOf a) m r ⊸ Stream (LOf a) m (Stream (LOf a) m r)
+breakWhen step begin done pred = loop0 begin
+  where
+    loop0 :: x -> Stream (LOf a) m r ⊸ Stream (LOf a) m (Stream (LOf a) m r)
+    loop0 x (Return r) = return $ return r
+    loop0 x (Effect m) = Effect $ fmap (loop0 x) m
+    loop0 x (Step (a :> rest)) = loop a (step x a) rest
+
+    loop :: a -> x -> Stream (LOf a) m r ⊸ Stream (LOf a) m (Stream (LOf a) m r)
+    loop a !x stream | pred (done x) = return $ yield a >> stream
+    loop a !x (Return r) = yield a >> return (return r)
+    loop a !x (Effect m) = Effect $ fmap (loop a x) m
+    loop a !x (Step (a' :> rest)) = yield a >> loop a' (step x a') rest
+{-# INLINABLE breakWhen #-}
+
+{-| Break during periods where the predicate is not satisfied, grouping the
+    periods when it is.
+
+>>> S.print $ mapped S.toList $ S.breaks not $ S.each [False,True,True,False,True,True,False]
+[True,True]
+[True,True]
+>>> S.print $ mapped S.toList $ S.breaks id $ S.each [False,True,True,False,True,True,False]
+[False]
+[False]
+[False]
+
+-}
+breaks :: forall a m r. LMonad m
+       => (a -> Bool) -> Stream (LOf a) m r ⊸ Stream (Stream (LOf a) m) m r
+breaks thus = loop where
+  loop :: Stream (LOf a) m r ⊸ Stream (Stream (LOf a) m) m r
+  loop stream = Effect $ do
+    e <- next stream
+    return $ case e of
+      Left   r      -> Return r
+      Right (a, p') -> case not (thus a) of
+        True  -> Step $ fmap loop (yield a >> break thus p')
+        False -> loop p'
+{-#INLINABLE breaks #-}
+
 -- {-| Apply an action to all values, re-yielding each
 --
 -- >>> S.product $ S.chain Prelude.print $ S.each [1..5]
