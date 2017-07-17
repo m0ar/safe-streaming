@@ -557,22 +557,21 @@ concat :: (LMonad m, Foldable.Foldable f)
 concat str = for str each
 {-# INLINE concat #-}
 
--- {-| The natural @cons@ for a @Stream (Of a)@.
---
--- > cons a stream = yield a >> stream
---
---    Useful for interoperation:
---
--- > Data.Text.foldr S.cons (return ()) :: Text -> Stream (Of Char) m ()
--- > Lazy.foldrChunks S.cons (return ()) :: Lazy.ByteString -> Stream (Of Strict.ByteString) m ()
---
---     and so on.
--- -}
---
--- cons :: (Monad m) => a -> Stream (Of a) m r -> Stream (Of a) m r
--- cons a str = Step (a :> str)
--- {-# INLINE cons #-}
---
+{-| The natural @cons@ for a @Stream (Of a)@.
+
+> cons a stream = yield a >> stream
+
+   Useful for interoperation:
+
+> Data.Text.foldr S.cons (return ()) :: Text -> Stream (Of Char) m ()
+> Lazy.foldrChunks S.cons (return ()) :: Lazy.ByteString -> Stream (Of Strict.ByteString) m ()
+
+    and so on.
+-}
+cons :: LMonad m => a -> Stream (LOf a) m r ⊸ Stream (LOf a) m r
+cons a str = Step (a :> str)
+{-# INLINE cons #-}
+
 -- {- | Cycle repeatedly through the layers of a stream, /ad inf./ This
 --      function is functor-general
 --
