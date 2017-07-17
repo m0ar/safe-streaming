@@ -6,7 +6,7 @@ module Control.Monad.LMonad (
   LMonad,
   (>>=), (>>),
   return, fail,
-  join
+  join, ap
 ) where
 
 import Control.Applicative.LApplicative (LApplicative(), pure)
