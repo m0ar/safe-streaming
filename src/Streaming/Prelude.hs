@@ -158,9 +158,9 @@ module Streaming.Prelude (
      , fold_
      -- , foldM
      -- , foldM_
---     , all
+     , all
 --     , all_
---     , any
+     , any
 --     , any_
 --     , sum
 --     , sum_
@@ -375,52 +375,54 @@ mapOf f (a :> b) = f a :> b
 -- _second :: Functor f => (b -> f b') -> Of a b -> f (Of a b')
 -- _second afb (a:>b) = fmap (\c -> (a:>c)) (afb b)
 -- {-#INLINABLE _second #-}
---
--- all :: Monad m => (a -> Bool) -> Stream (Of a) m r -> m (Of Bool r)
--- all thus = loop True where
---   loop b str = case str of
---     Return r -> return (b :> r)
---     Effect m -> m >>= loop b
---     Step (a :> rest) -> if thus a
---       then loop True rest
---       else do
---         r <- effects rest
---         return (False :> r)
--- {-#INLINABLE all #-}
---
+
+all :: forall a m r. LMonad m => (a -> Bool) -> Stream (LOf a) m r ⊸ m (LOf Bool r)
+all thus = loop True where
+  loop :: Bool -> Stream (LOf a) m r ⊸ m (LOf Bool r)
+  loop b (Return r) = return $ b :> r
+  loop b (Effect m) = m >>= loop b
+  loop _ (Step (a :> rest)) = case thus a of
+    True  -> loop True rest
+    False -> do
+      r <- effects rest
+      return $ False :> r
+{-#INLINABLE all #-}
+
+-- Incompatible with LOf, skip
 -- all_ :: Monad m => (a -> Bool) -> Stream (Of a) m r -> m Bool
 -- all_ thus = loop True where
---   loop b str = case str of
---     Return r -> return b
---     Effect m -> m >>= loop b
---     Step (a :> rest) -> if thus a
---       then loop True rest
---       else return False
+  -- loop b str = case str of
+    -- Return r -> return b
+    -- Effect m -> m >>= loop b
+    -- Step (a :> rest) -> if thus a
+      -- then loop True rest
+      -- else return False
 -- {-#INLINABLE all_ #-}
---
---
--- any :: Monad m => (a -> Bool) -> Stream (Of a) m r -> m (Of Bool r)
--- any thus = loop False where
---   loop b str = case str of
---     Return r -> return (b :> r)
---     Effect m -> m >>= loop b
---     Step (a :> rest) -> if thus a
---       then do
---         r <- effects rest
---         return (True :> r)
---       else loop False rest
--- {-#INLINABLE any #-}
---
+
+
+any :: forall a m r. LMonad m => (a -> Bool) -> Stream (LOf a) m r ⊸ m (LOf Bool r)
+any thus = loop False where
+  loop :: Bool -> Stream (LOf a) m r ⊸ m (LOf Bool r)
+  loop b (Return r) = return $ b :> r
+  loop b (Effect m) = m >>= loop b
+  loop _ (Step (a :> rest)) = case thus a of
+    True  -> do
+      r <- effects rest
+      return $ True :> r
+    False -> loop False rest
+{-#INLINABLE any #-}
+
+-- Incompatible with LOf, skip
 -- any_ :: Monad m => (a -> Bool) -> Stream (Of a) m r -> m Bool
 -- any_ thus = loop False where
---   loop b str = case str of
---     Return r -> return b
---     Effect m -> m >>= loop b
---     Step (a :> rest) -> if thus a
---       then return True
---       else loop False rest
+  -- loop b str = case str of
+    -- Return r -> return b
+    -- Effect m -> m >>= loop b
+    -- Step (a :> rest) -> if thus a
+      -- then return True
+      -- else loop False rest
 -- {-#INLINABLE any_ #-}
---
+
 -- {-| Break a sequence upon meeting element falls under a predicate,
 --     keeping it and the rest of the stream as the return value.
 --
