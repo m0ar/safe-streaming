@@ -507,27 +507,27 @@ breaks thus = loop where
         False -> loop p'
 {-#INLINABLE breaks #-}
 
--- {-| Apply an action to all values, re-yielding each
---
--- >>> S.product $ S.chain Prelude.print $ S.each [1..5]
--- 1
--- 2
--- 3
--- 4
--- 5
--- 120 :> ()
--- -}
---
--- chain :: Monad m => (a -> m ()) -> Stream (Of a) m r -> Stream (Of a) m r
--- chain f = loop where
---   loop str = case str of
---     Return r -> return r
---     Effect mn  -> Effect (liftM loop mn)
---     Step (a :> rest) -> Effect $ do
---       f a
---       return (Step (a :> loop rest))
--- {-# INLINABLE chain #-}
---
+{-| Apply an action to all values, re-yielding each
+
+>>> S.product $ S.chain Prelude.print $ S.each [1..5]
+1
+2
+3
+4
+5
+120 :> ()
+-}
+chain :: forall a m r. LMonad m
+      => (a -> m ()) -> Stream (LOf a) m r ⊸ Stream (LOf a) m r
+chain f = loop where
+  loop :: Stream (LOf a) m r ⊸ Stream (LOf a) m r
+  loop (Return r) = return r
+  loop (Effect m) = Effect $ fmap loop m
+  loop (Step (a :> rest)) = Effect $ do
+    f a
+    return $ Step $ a :> loop rest
+{-# INLINABLE chain #-}
+
 -- {-| Make a stream of traversable containers into a stream of their separate elements.
 --     This is just
 --
