@@ -1,7 +1,9 @@
 {-# LANGUAGE Trustworthy #-}
-{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE GADTs#-}
 
 module Data.Linear where
+
+import Prelude (Show(..), Eq(..))
 
 id :: a ⊸ a
 id a = a
@@ -20,3 +22,12 @@ f $ x = f x
 
 (.) :: (b ⊸ c) ⊸ (a ⊸ b) ⊸ a ⊸ c
 (.) f g a = f $ g a
+
+data Unrestricted a where
+  Unrestricted :: a -> Unrestricted a
+  deriving (Show, Eq)
+
+getUnrestricted :: Unrestricted a ⊸ a
+getUnrestricted (Unrestricted a) = a
+
+
