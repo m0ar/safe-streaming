@@ -4,8 +4,7 @@
 -- | A linear version of a Functor
 module Data.Functor.LFunctor where
 
-import Data.Linear (flip, liftUnit, ($))
-import Prelude ((.))
+import Data.Linear (flip, liftUnit, ($), (.))
 import Data.Functor.Compose (Compose(..))
 import Data.Functor.Sum (Sum(..))
 import Data.Functor.Identity (Identity(..))
