@@ -18,7 +18,7 @@ import Data.Typeable
 -- for drop, filter and so on in the streaming prelude while still being an LFunctor.
 -- This is neat because it allows us to keep the monadic actions linear, but not the
 -- resulting values (only the first one can cause critical problems with streaming).
-data LOf a b where (:>) :: a -> b ⊸ LOf a b
+data LOf a b where (:>) :: !a -> b ⊸ LOf a b
     deriving (Data, Eq, Foldable, Ord,
               Read, Show, Traversable, Typeable)
 infixr 5 :>
