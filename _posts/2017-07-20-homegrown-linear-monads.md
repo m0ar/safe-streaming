@@ -3,7 +3,7 @@ layout: post
 title: Homegrown linear monads with RebindableSyntax
 ---
 
-When tackling the before-mentioned problem with repeated effects in
+When tackling the aforementioned problem with repeated effects in
 streams, the need for a _linear_ monad class arose. This would allow relying
 on the type system to ensure that a monadic value can only be used once by
 forcing the bind (`>>=`) to consume its first argument (disallowing multiple
