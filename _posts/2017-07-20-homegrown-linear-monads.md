@@ -45,8 +45,9 @@ The `>>=` is pretty straight forward: given a monadic value, we unwrap it,
 apply it to a _linear_ morphism _once_, and get a new monadic value. One of my
 first hunches here was to use `(>>=) :: m a ⊸ (a -> m b) ⊸ m b` which would
 make the superclasses a lot less constrained, but unfortunately we need to
-take in account that the `a` here may also be some monadic value. Allowing
-this unrestricted continuation `a -> m b` would allow freely duplicating those
+take in account that the `a` here may also be some monadic value
+(e.g. `a ~ Maybe Int`, and *particularly* `a ~ Stream f m r`). Allowing this
+unrestricted continuation `a -> m b` would allow freely duplicating those
 monadic actions.
 
 `>>` looks a bit more different than we are used to, and in particular very
@@ -144,7 +145,7 @@ instance Functor (Of a) where
 
 where `b` is the end-of-stream value. ...hey, that isn't half bad: `fmap` _is_
 only applied to a single value, but the functor can hold any type of values in
-it's unrestricted `a`! To solve the problems with streaming we want to
+its unrestricted `a`! To solve the problems with streaming we want to
 constrain the _effects_ of the stream, usually we don't care about the
 linearity of the _values_. So, since we in this context don't really care
 about linearity in `a`, we might as well just make it unrestricted (note the
@@ -194,6 +195,6 @@ instance (LFunctor f, LMonad m) => LApplicative (Stream f m) where
 
 The example is taken from my [linear streaming fork](https://github.com/m0ar/safe-streaming/blob/master/src/Streaming/Internal.hs).
 
-This extension is veryclever and enables friction-free use of whatever
+This extension is very clever and enables friction-free use of whatever
 definition you want to use for `>>=`, `>>` and `return` (other syntactic
-stuff too)!
+stuff too!).
