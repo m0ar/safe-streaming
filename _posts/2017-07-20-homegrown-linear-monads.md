@@ -197,4 +197,9 @@ The example is taken from my [linear streaming fork](https://github.com/m0ar/saf
 
 This extension is very clever and enables friction-free use of whatever
 definition you want to use for `>>=`, `>>` and `return` (other syntactic
-stuff too!).
+stuff too).
+
+
+
+Thanks for reading! If you would like to discuss the content, feel free to
+drop a comment in [the Reddit thread](https://www.reddit.com/r/haskell/comments/6ogscm/homegrown_linear_monads_with_rebindablesyntax/).
