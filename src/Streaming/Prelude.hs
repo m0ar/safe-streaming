@@ -378,12 +378,12 @@ mapOf f (a :> b) = f a :> b
 -- {-#INLINABLE _second #-}
 
 all :: forall a m r. LMonad m => (a -> Bool) -> Stream (LOf a) m r ⊸ m (LOf Bool r)
-all thus = loop True where
-  loop :: Bool -> Stream (LOf a) m r ⊸ m (LOf Bool r)
-  loop b (Return r) = return $ b :> r
-  loop b (Effect m) = m >>= loop b
-  loop _ (Step (a :> rest)) = case thus a of
-    True  -> loop True rest
+all thus = loop where
+  loop :: Stream (LOf a) m r ⊸ m (LOf Bool r)
+  loop (Return r) = return $ True :> r
+  loop (Effect m) = m >>= loop
+  loop (Step (a :> rest)) = case thus a of
+    True  -> loop rest
     False -> do
       r <- effects rest
       return $ False :> r
@@ -402,15 +402,15 @@ all thus = loop True where
 
 
 any :: forall a m r. LMonad m => (a -> Bool) -> Stream (LOf a) m r ⊸ m (LOf Bool r)
-any thus = loop False where
-  loop :: Bool -> Stream (LOf a) m r ⊸ m (LOf Bool r)
-  loop b (Return r) = return $ b :> r
-  loop b (Effect m) = m >>= loop b
-  loop _ (Step (a :> rest)) = case thus a of
+any thus = loop where
+  loop :: Stream (LOf a) m r ⊸ m (LOf Bool r)
+  loop (Return r) = return $ False :> r
+  loop (Effect m) = m >>= loop
+  loop (Step (a :> rest)) = case thus a of
     True  -> do
       r <- effects rest
       return $ True :> r
-    False -> loop False rest
+    False -> loop rest
 {-#INLINABLE any #-}
 
 -- Incompatible with LOf, skip
