@@ -3,12 +3,15 @@ layout: post
 title: Homegrown linear monads with RebindableSyntax
 ---
 
-When tackling the aforementioned problem with repeated effects in
-streams, the need for a _linear_ monad class arose. This would allow relying
-on the type system to ensure that a monadic value can only be used once by
-forcing the bind (`>>=`) to consume its first argument (disallowing multiple
-uses of earlier stream references), effectively making the earlier erroneous
-examples impossible.
+The issues I am trying to tackle with `streaming` are rooted in the fact
+that usage of references to old stream states can _repeat_ monadic effects 
+that was performed to yield earlier values. When solving this, the need
+for a _linear_ monad class arose. This would allow relying on the type
+system to ensure that a monadic value can only be used _once_ by forcing the
+bind (`>>=`) to consume its first argument (disallowing multiple uses of
+earlier stream references), effectively making the
+[previously shown](https://m0ar.github.io/safe-streaming/2017/06/19/linear-types-101.html)
+runtime errors impossible.
 
 This was interesting because monads and their accompanied `do`-notation feels
 very tightly coupled with Haskell as a language, but the GHC extension
