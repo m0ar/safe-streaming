@@ -1249,17 +1249,17 @@ length = fold (\n _ -> n + 1) 0 id
 {-#INLINE length #-}
 
 
--- -- ---------------
--- -- map
--- -- ---------------
---
--- {-| Standard map on the elements of a stream.
---
--- >>> S.stdoutLn $ S.map reverse $ each (words "alpha beta")
--- ahpla
--- ateb
--- -}
---
+-- ---------------
+-- map
+-- ---------------
+
+{-| Standard map on the elements of a stream.
+
+>>> S.stdoutLn $ S.map reverse $ each (words "alpha beta")
+ahpla
+ateb
+-}
+
 map :: LMonad m => (a ⊸ b) -> Stream (LOf a) m r ⊸ Stream (LOf b) m r
 map f =  maps (\(x :> rest) -> f x :> rest)
 --  loop where
