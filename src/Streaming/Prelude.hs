@@ -1102,33 +1102,33 @@ groupedBy equals = loop where
       False -> Return $ Step $ Compose $ a :> rest
 {-# INLINABLE groupedBy #-}
 
--- {-| Group elements of a stream in accordance with the supplied comparison.
---
---
--- >>> S.print $ mapped S.toList $ S.groupBy (>=) $ each [1,2,3,1,2,3,4,3,2,4,5,6,7,6,5]
--- [1]
--- [2]
--- [3,1,2,3]
--- [4,3,2,4]
--- [5]
--- [6]
--- [7,6,5]
---
--- -}
--- groupBy :: Monad m
---   => (a -> a -> Bool)
---   -> Stream (Of a) m r
---   -> Stream (Stream (Of a) m) m r
--- groupBy equals = loop  where
---   loop stream = Effect $ do
---         e <- next stream
---         return $ case e of
---             Left   r      -> Return r
---             Right (a, p') -> Step $
---                 fmap loop (yield a >> span (equals a) p')
--- {-# INLINABLE groupBy #-}
---
---
+{-| Group elements of a stream in accordance with the supplied comparison.
+
+
+>>> S.print $ mapped S.toList $ S.groupBy (>=) $ each [1,2,3,1,2,3,4,3,2,4,5,6,7,6,5]
+[1]
+[2]
+[3,1,2,3]
+[4,3,2,4]
+[5]
+[6]
+[7,6,5]
+
+-}
+groupBy :: forall a m r. LMonad m
+        => (a -> a -> Bool) -> Stream (LOf a) m r
+        ⊸ Stream (Stream (LOf a) m) m r
+groupBy equals = loop where
+  loop :: Stream (LOf a) m r ⊸ Stream (Stream (LOf a) m) m r
+  loop stream = Effect $ do
+        e <- next stream
+        return $ case e of
+            Left   r      -> Return r
+            Right (a, p') -> Step $
+                fmap loop (yield a >> span (equals a) p')
+{-# INLINABLE groupBy #-}
+
+
 -- {-| Group successive equal items together
 --
 -- >>> S.toList $ mapped S.toList $ S.group $ each "baaaaad"
@@ -1804,24 +1804,25 @@ next (Step (a :> rest)) = return $ Right (a, rest)
 -- sum :: (Monad m, Num a) => Stream (Of a) m r -> m (Of a r)
 -- sum = fold (+) 0 id
 -- {-# INLINABLE sum #-}
---
--- -- ---------------
--- -- span
--- -- ---------------
---
--- -- | Stream elements until one fails the condition, return the rest.
--- span :: Monad m => (a -> Bool) -> Stream (Of a) m r
---       -> Stream (Of a) m (Stream (Of a) m r)
--- span pred = loop where
---   loop str = case str of
---     Return r         -> Return (Return r)
---     Effect m          -> Effect $ liftM loop m
---     Step (a :> rest) -> if pred a
---       then Step (a :> loop rest)
---       else Return (Step (a :> rest))
--- {-# INLINABLE span #-}
---
---
+
+-- ---------------
+-- span
+-- ---------------
+
+-- | Stream elements until one fails the condition, return the rest.
+span :: forall a m r. LMonad m
+     => (a -> Bool) -> Stream (LOf a) m r
+     ⊸ Stream (LOf a) m (Stream (LOf a) m r)
+span pred = loop where
+  loop :: Stream (LOf a) m r ⊸ Stream (LOf a) m (Stream (LOf a) m r)
+  loop (Return r) = Return $ Return r
+  loop (Effect m) = Effect $ fmap loop m
+  loop (Step (a :> rest)) = case pred a of
+    True  -> Step $ a :> loop rest
+    False -> Return $ Step $ a :> rest
+{-# INLINABLE span #-}
+
+
 -- {-| Split a stream of elements wherever a given element arises.
 --     The action is like that of 'Prelude.words'.
 --
