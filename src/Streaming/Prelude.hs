@@ -697,19 +697,19 @@ dropWhile pred = loop where
     False -> Step $ a :> as
 {-# INLINABLE dropWhile #-}
 
--- -- ---------------
--- -- each
--- -- ---------------
---
--- {- | Stream the elements of a pure, foldable container.
---
--- >>> S.print $ each [1..3]
--- 1
--- 2
--- 3
---
---
--- -}
+-- ---------------
+-- each
+-- ---------------
+
+{- | Stream the elements of a pure, foldable container.
+
+>>> S.print $ each [1..3]
+1
+2
+3
+
+
+-}
 each :: (LMonad m, Foldable.Foldable f) => f a ⊸ Stream (LOf a) m ()
 each = Foldable.foldr (\a p -> Step (a :> p)) (Return ())
 {-# INLINABLE each #-}
