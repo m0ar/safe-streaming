@@ -1531,67 +1531,66 @@ read stream = for stream $ \str -> case readMaybe str of
 {-# INLINE read #-}
 
 
--- -- ---------------
--- -- repeat
--- -- ---------------
--- {-| Repeat an element /ad inf./ .
---
--- >>> S.print $ S.take 3 $ S.repeat 1
--- 1
--- 1
--- 1
--- -}
---
--- repeat :: Monad m => a -> Stream (Of a) m r
--- repeat a = loop where loop = Effect (return (Step (a :> loop)))
--- {-# INLINE repeat #-}
---
---
--- {-| Repeat a monadic action /ad inf./, streaming its results.
---
--- >>>  S.toList $ S.take 2 $ repeatM getLine
--- one<Enter>
--- two<Enter>
--- ["one","two"]
---
--- -}
---
--- repeatM :: Monad m => m a -> Stream (Of a) m r
--- repeatM ma = loop where
---   loop = do
---     a <- lift ma
---     yield a
---     loop
--- {-# INLINABLE repeatM #-}
---
--- -- ---------------
--- -- replicate
--- -- ---------------
---
--- -- | Repeat an element several times.
--- replicate :: Monad m => Int -> a -> Stream (Of a) m ()
--- replicate n a | n <= 0 = return ()
--- replicate n a = loop n where
---   loop 0 = Return ()
---   loop m = Effect (return (Step (a :> loop (m-1))))
--- {-# INLINABLE replicate #-}
---
--- {-| Repeat an action several times, streaming its results.
---
--- >>> S.print $ S.replicateM 2 getCurrentTime
--- 2015-08-18 00:57:36.124508 UTC
--- 2015-08-18 00:57:36.124785 UTC
---
--- -}
--- replicateM :: Monad m => Int -> m a -> Stream (Of a) m ()
--- replicateM n ma | n <= 0 = return ()
--- replicateM n ma = loop n where
---   loop 0 = Return ()
---   loop n = Effect $ do
---     a <- ma
---     return (Step (a :> loop (n-1)))
--- {-# INLINABLE replicateM #-}
---
+-- ---------------
+-- repeat
+-- ---------------
+{-| Repeat an element /ad inf./ .
+
+>>> S.print $ S.take 3 $ S.repeat 1
+1
+1
+1
+-}
+repeat :: LMonad m => a -> Stream (LOf a) m r
+repeat a = Effect $ return $ Step $ a :> repeat a
+{-# INLINE repeat #-}
+
+
+{-| Repeat a monadic action /ad inf./, streaming its results.
+
+>>>  S.toList $ S.take 2 $ repeatM getLine
+one<Enter>
+two<Enter>
+["one","two"]
+
+-}
+repeatM :: LMonad m => m a -> Stream (LOf a) m r
+repeatM ma = loop where
+  loop = do
+    a <- lift ma
+    yield a
+    loop
+{-# INLINABLE repeatM #-}
+
+-- ---------------
+-- replicate
+-- ---------------
+
+-- | Repeat an element several times.
+replicate :: LMonad m => Int -> a -> Stream (LOf a) m ()
+replicate n a | n <= 0 = return ()
+replicate n a = loop n where
+  loop 0 = Return ()
+  loop m = Effect $ return $ Step $ a :> loop (m-1)
+{-# INLINABLE replicate #-}
+
+
+{-| Repeat an action several times, streaming its results.
+
+>>> S.print $ S.replicateM 2 getCurrentTime
+2015-08-18 00:57:36.124508 UTC
+2015-08-18 00:57:36.124785 UTC
+
+-}
+replicateM :: LMonad m => Int -> m a -> Stream (LOf a) m ()
+replicateM n ma | n <= 0 = return ()
+replicateM n ma = loop n where
+  loop 0 = Return ()
+  loop n = Effect $ do
+    a <- ma
+    return $ Step $ a :> loop (n-1)
+{-# INLINABLE replicateM #-}
+
 -- {-| Read an @IORef (Maybe a)@ or a similar device until it reads @Nothing@.
 --     @reread@ provides convenient exit from the @io-streams@ library
 --
