@@ -1350,42 +1350,47 @@ mapped = mapsM
 {-#INLINE mapped #-}
 
 
--- {-| Fold streamed items into their monoidal sum
---
--- >>> S.mconcat $ S.take 2 $ S.map (Data.Monoid.Last . Just) (S.stdinLn)
--- first<Enter>
--- last<Enter>
--- Last {getLast = Just "last"} :> ()
---
---  -}
--- mconcat :: (Monad m, Monoid w) => Stream (Of w) m r -> m (Of w r)
--- mconcat = fold mappend mempty id
--- {-#INLINE mconcat #-}
---
+{-| Fold streamed items into their monoidal sum
+
+>>> S.mconcat $ S.take 2 $ S.map (Data.Monoid.Last . Just) (S.stdinLn)
+first<Enter>
+last<Enter>
+Last {getLast = Just "last"} :> ()
+
+ -}
+mconcat :: (LMonad m, Monoid w) => Stream (LOf w) m r ⊸ m (LOf w r)
+mconcat = fold mappend mempty id
+{-#INLINE mconcat #-}
+
 -- | Strict maybe
 data Maybe_ a = Just_ !a | Nothing_
 
+-- Incompatible with LOf
 -- mconcat_ :: (Monad m, Monoid w) => Stream (Of w) m r -> m w
 -- mconcat_ = fold_ mappend mempty id
---
--- minimum :: (Monad m, Ord a) => Stream (Of a) m r -> m (Of (Maybe a) r)
--- minimum = fold (\m a -> case m of Nothing_ -> Just_ a ; Just_ a' -> Just_ (min a a'))
---                Nothing_
---                (\m -> case m of Nothing_ -> Nothing; Just_ r -> Just r)
--- {-#INLINE minimum #-}
---
+
+
+minimum :: (LMonad m, Ord a) => Stream (LOf a) m r ⊸ m (LOf (Maybe a) r)
+minimum = fold (\m a -> case m of Nothing_ -> Just_ a ; Just_ a' -> Just_ (min a a'))
+               Nothing_
+               (\m -> case m of Nothing_ -> Nothing; Just_ r -> Just r)
+{-#INLINE minimum #-}
+
+-- Incompatible with LOf
 -- minimum_ :: (Monad m, Ord a) => Stream (Of a) m r -> m (Maybe a)
 -- minimum_ = fold_ (\m a -> case m of Nothing_ -> Just_ a ; Just_ a' -> Just_ (min a a'))
 --                  Nothing_
 --                  (\m -> case m of Nothing_ -> Nothing; Just_ r -> Just r)
 -- {-#INLINE minimum_ #-}
---
--- maximum :: (Monad m, Ord a) => Stream (Of a) m r -> m (Of (Maybe a) r)
--- maximum = fold (\m a -> case m of Nothing_ -> Just_ a ; Just_ a' -> Just_ (max a a'))
---                Nothing_
---                (\m -> case m of Nothing_ -> Nothing; Just_ r -> Just r)
--- {-#INLINE maximum #-}
---
+
+
+maximum :: (LMonad m, Ord a) => Stream (LOf a) m r -> m (LOf (Maybe a) r)
+maximum = fold (\m a -> case m of Nothing_ -> Just_ a ; Just_ a' -> Just_ (max a a'))
+               Nothing_
+               (\m -> case m of Nothing_ -> Nothing; Just_ r -> Just r)
+{-#INLINE maximum #-}
+
+-- Incompatible with LOf
 -- maximum_ :: (Monad m, Ord a) => Stream (Of a) m r -> m (Maybe a)
 -- maximum_ = fold_ (\m a -> case m of Nothing_ -> Just_ a ; Just_ a' -> Just_ (max a a'))
 --                  Nothing_
