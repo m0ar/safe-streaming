@@ -245,7 +245,6 @@ import Data.Data ( Data, Typeable )
 import Data.Functor.Identity
 import Data.Functor.Sum
 
-import qualified Prelude as Prelude
 import Data.Foldable (Foldable)
 import Data.Traversable (Traversable)
 import qualified Data.Foldable as Foldable
