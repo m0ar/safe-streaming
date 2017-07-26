@@ -1129,49 +1129,51 @@ groupBy equals = loop where
 {-# INLINABLE groupBy #-}
 
 
--- {-| Group successive equal items together
---
--- >>> S.toList $ mapped S.toList $ S.group $ each "baaaaad"
--- ["b","aaaaa","d"] :> ()
---
--- >>> S.toList $ concats $ maps (S.drained . S.splitAt 1) $ S.group $ each "baaaaaaad"
--- "bad" :> ()
---
--- -}
--- group :: (Monad m, Eq a) => Stream (Of a) m r -> Stream (Stream (Of a) m) m r
--- group = groupBy (==)
--- {-#INLINE group #-}
---
---
--- head :: Monad m => Stream (Of a) m r -> m (Of (Maybe a) r)
--- head str = case str of
---   Return r            -> return (Nothing :> r)
---   Effect m            -> m >>= head
---   Step (a :> rest)    -> effects rest >>= \r -> return (Just a :> r)
--- {-#INLINABLE head #-}
---
+{-| Group successive equal items together
+
+>>> S.toList $ mapped S.toList $ S.group $ each "baaaaad"
+["b","aaaaa","d"] :> ()
+
+>>> S.toList $ concats $ maps (S.drained . S.splitAt 1) $ S.group $ each "baaaaaaad"
+"bad" :> ()
+
+-}
+group :: (LMonad m, Eq a)
+      => Stream (LOf a) m r ⊸ Stream (Stream (LOf a) m) m r
+group = groupBy (==)
+{-#INLINE group #-}
+
+
+head :: LMonad m => Stream (LOf a) m r ⊸ m (LOf (Maybe a) r)
+head (Return r) = return $ Nothing :> r
+head (Effect m) = m >>= head
+head (Step (a :> rest)) = effects rest >>= \r -> return $ Just a :> r
+{-#INLINABLE head #-}
+
+-- Incompatible with LOf
 -- head_ :: Monad m => Stream (Of a) m r -> m (Maybe a)
 -- head_ str = case str of
 --   Return r            -> return Nothing
 --   Effect m            -> m >>= head_
 --   Step (a :> rest)    -> return (Just a)
 -- {-#INLINABLE head_ #-}
---
--- intersperse :: Monad m => a -> Stream (Of a) m r -> Stream (Of a) m r
--- intersperse x str = case str of
---     Return r -> Return r
---     Effect m -> Effect (liftM (intersperse x) m)
---     Step (a :> rest) -> loop a rest
---   where
---   loop !a str = case str of
---     Return r -> Step (a :> Return r)
---     Effect m -> Effect (liftM (loop a) m)
---     Step (b :> rest) -> Step (a :> Step (x :> loop b rest))
--- {-#INLINABLE intersperse #-}
---
---
---
---
+
+
+intersperse :: forall a m r. LMonad m
+            => a -> Stream (LOf a) m r ⊸ Stream (LOf a) m r
+intersperse x (Return r) = Return r
+intersperse x (Effect m) = Effect $ fmap (intersperse x) m
+intersperse x (Step (a :> rest)) = loop a rest
+  where
+    loop :: a -> Stream (LOf a) m r ⊸ Stream (LOf a) m r
+    loop !a (Return r) = Step $ a :> Return r
+    loop !a (Effect m) = Effect $ fmap (loop a) m
+    loop !a (Step (b :> rest)) = Step $ a :> Step (x :> loop b rest)
+{-#INLINABLE intersperse #-}
+
+
+
+
 -- -- ---------------
 -- -- iterate
 -- -- ---------------
