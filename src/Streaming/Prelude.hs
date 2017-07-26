@@ -1450,53 +1450,54 @@ notElem a' = loop where
 -- {-#INLINABLE notElem_ #-}
 
 
--- {-|
--- > filter p = hoist effects (partition p)
---
---  -}
--- partition :: Monad m => (a -> Bool) -> Stream (Of a) m r -> Stream (Of a) (Stream (Of a) m) r
--- partition thus = loop where
---    loop str = case str of
---      Return r -> Return r
---      Effect m -> Effect (liftM loop (lift m))
---      Step (a :> rest) -> if thus a
---        then Step (a :> loop rest)
---        else Effect $ do
---                yield a
---                return (loop rest)
---
---
--- {-| Separate left and right values in distinct streams. ('separate' is
---     a more powerful, functor-general, equivalent using 'Sum' in place of 'Either').
---     So, for example, to permit unlimited user
---     input of @Int@s on condition of only two errors, we might write:
---
--- >>> S.toList $ S.print $ S.take 2 $ partitionEithers $ S.map readEither $ S.stdinLn  :: IO (Of [Int] ())
--- 1<Enter>
--- 2<Enter>
--- qqqqqqqqqq<Enter>
--- "Prelude.read: no parse"
--- 3<Enter>
--- rrrrrrrrrr<Enter>
--- "Prelude.read: no parse"
--- [1,2,3] :> ()
---
--- > partitionEithers = separate . maps S.eitherToSum
--- > lefts  = hoist S.effects . partitionEithers
--- > rights = S.effects . partitionEithers
--- > rights = S.concat
--- -}
--- partitionEithers :: Monad m => Stream (Of (Either a b)) m r -> Stream (Of a) (Stream (Of b) m) r
--- partitionEithers =  loop where
---    loop str = case str of
---      Return r -> Return r
---      Effect m -> Effect (liftM loop (lift m))
---      Step (Left a :> rest) -> Step (a :> loop rest)
---      Step (Right b :> rest) -> Effect $ do
---        yield b
---        return (loop rest)
---
---
+{-|
+> filter p = hoist effects (partition p)
+-}
+partition :: forall a m r. LMonad m
+          => (a -> Bool) -> Stream (LOf a) m r
+          ⊸ Stream (LOf a) (Stream (LOf a) m) r
+partition thus = loop where
+  loop :: Stream (LOf a) m r ⊸ Stream (LOf a) (Stream (LOf a) m) r
+  loop (Return r) = Return r
+  loop (Effect m) = Effect $ fmap loop (lift m)
+  loop (Step (a :> rest)) = case thus a of
+    True  -> Step (a :> loop rest)
+    False -> Effect $ do
+      yield a
+      return $ loop rest
+
+
+{-| Separate left and right values in distinct streams. ('separate' is
+    a more powerful, functor-general, equivalent using 'Sum' in place of 'Either').
+    So, for example, to permit unlimited user
+    input of @Int@s on condition of only two errors, we might write:
+
+>>> S.toList $ S.print $ S.take 2 $ partitionEithers $ S.map readEither $ S.stdinLn  :: IO (Of [Int] ())
+1<Enter>
+2<Enter>
+qqqqqqqqqq<Enter>
+"Prelude.read: no parse"
+3<Enter>
+rrrrrrrrrr<Enter>
+"Prelude.read: no parse"
+[1,2,3] :> ()
+
+> partitionEithers = separate . maps S.eitherToSum
+> lefts  = hoist S.effects . partitionEithers
+> rights = S.effects . partitionEithers
+> rights = S.concat
+-}
+partitionEithers :: forall a b m r. LMonad m
+                 => Stream (LOf (Either a b)) m r
+                 ⊸ Stream (LOf a) (Stream (LOf b) m) r
+partitionEithers (Return r) = Return r
+partitionEithers (Effect m) = Effect $ fmap partitionEithers (lift m)
+partitionEithers (Step (Left  a :> rest)) = Step (a :> partitionEithers rest)
+partitionEithers (Step (Right b :> rest)) = Effect $ do
+  yield b
+  return $ partitionEithers rest
+
+
 -- -- | Fold a 'Stream' of numbers into their product
 -- product_ :: (Monad m, Num a) => Stream (Of a) m () -> m a
 -- product_ = fold_ (*) 1 id
