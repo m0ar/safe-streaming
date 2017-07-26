@@ -1198,12 +1198,12 @@ iterateM f = loop where
 
 
 last :: LMonad m => Stream (LOf a) m r ⊸ m (LOf (Maybe a) r)
-last = loop Nothing where
+last = loop Nothing_ where
   loop mb (Return r) = case mb of
-    Nothing -> return $ Nothing :> r
-    Just a  -> return $ Just a :> r
+    Nothing_ -> return $ Nothing :> r
+    Just_ a  -> return $ Just a :> r
   loop mb (Effect m) = m >>= loop mb
-  loop mb (Step (a :> rest)) = loop (Just a) rest
+  loop mb (Step (a :> rest)) = loop (Just_ a) rest
 {-#INLINABLE last #-}
 
 
