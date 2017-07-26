@@ -838,23 +838,24 @@ filter pred = loop where
 {-# INLINE filter #-}  -- ~ 10% faster than INLINABLE in simple bench
 
 
--- -- ---------------
--- -- filterM
--- -- ---------------
---
--- -- | Skip elements of a stream that fail a monadic test
--- filterM  :: (Monad m) => (a -> m Bool) -> Stream (Of a) m r -> Stream (Of a) m r
--- filterM pred = loop where
---   loop str = case str of
---     Return r       -> Return r
---     Effect m       -> Effect $ liftM loop m
---     Step (a :> as) -> Effect $ do
---       bool <- pred a
---       if bool
---         then return $ Step (a :> loop as)
---         else return $ loop as
--- {-# INLINE filterM #-}  -- ~ 10% faster than INLINABLE in simple bench
---
+-- ---------------
+-- filterM
+-- ---------------
+
+-- | Skip elements of a stream that fail a monadic test
+filterM :: forall a m r. LMonad m
+        => (a -> m Bool) -> Stream (LOf a) m r ⊸ Stream (LOf a) m r
+filterM pred = loop where
+  loop :: Stream (LOf a) m r ⊸ Stream (LOf a) m r
+  loop (Return r) = Return r
+  loop (Effect m) = Effect $ fmap loop m
+  loop (Step (a :> as)) = Effect $ do
+    bool <- pred a
+    case bool of
+      True  -> return $ Step $ a :> loop as
+      False -> return $ loop as
+{-# INLINE filterM #-}  -- ~ 10% faster than INLINABLE in simple bench
+
 -- -- -- ---------------
 -- -- -- first
 -- -- -- ---------------
