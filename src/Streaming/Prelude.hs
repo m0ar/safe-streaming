@@ -257,7 +257,7 @@ import Prelude hiding (map, mapM, mapM_, filter, drop, dropWhile, take, mconcat
                       , print, zipWith, zip, zipWith3, zip3, unzip, seq, show, read
                       , readLn, sequence, concat, span, break, readFile, writeFile
                       , minimum, maximum, elem, notElem, intersperse, all, any, head
-                      , last, fmap, (>>=), (>>), return)
+                      , last, fmap, (>>=), (>>), return, (<$>))
 
 import qualified GHC.IO.Exception as G
 import qualified System.IO as IO
@@ -741,22 +741,21 @@ effects (Effect m) = m >>= effects
 effects (Step (_ :> rest)) = effects rest
 {-#INLINABLE effects #-}
 
--- {-| Exhaust a stream remembering only whether @a@ was an element.
---
--- -}
---
--- elem :: (Monad m, Eq a) => a -> Stream (Of a) m r -> m (Of Bool r)
--- elem a' = loop False where
---   loop True str = liftM (True :>) (effects str)
---   loop False str = case str of
---     Return r -> return (False :> r)
---     Effect m -> m >>= loop False
---     Step (a:> rest) ->
---       if a == a'
---         then liftM (True :>) (effects rest)
---         else loop False rest
--- {-#INLINABLE elem #-}
---
+{-| Exhaust a stream remembering only whether @a@ was an element.
+-}
+elem :: forall a m r. (LMonad m, Eq a)
+     => a -> Stream (LOf a) m r ⊸ m (LOf Bool r)
+elem a' = loop False where
+  loop :: Bool -> Stream (LOf a) m r ⊸ m (LOf Bool r)
+  loop True str = (True :>) <$> effects str
+  loop False (Return r) = return $ False :> r
+  loop False (Effect m) = m >>= loop False
+  loop False (Step (a :> rest)) = case a == a' of
+    True  -> (True :>) <$> effects rest
+    False -> loop False rest
+{-#INLINABLE elem #-}
+
+-- Incompatible with LOf, since it throws the resulting @r@ away
 -- elem_ :: (Monad m, Eq a) => a -> Stream (Of a) m r -> m Bool
 -- elem_ a' = loop False where
 --   loop True str = return True
