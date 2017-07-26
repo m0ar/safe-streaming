@@ -1174,30 +1174,30 @@ intersperse x (Step (a :> rest)) = loop a rest
 
 
 
--- -- ---------------
--- -- iterate
--- -- ---------------
---
--- {-| Iterate a pure function from a seed value, streaming the results forever
---
---
---
--- -}
--- iterate :: Monad m => (a -> a) -> a -> Stream (Of a) m r
--- iterate f = loop where
---   loop a' = Effect (return (Step (a' :> loop (f a'))))
--- {-# INLINABLE iterate #-}
---
--- -- | Iterate a monadic function from a seed value, streaming the results forever
--- iterateM :: Monad m => (a -> m a) -> m a -> Stream (Of a) m r
--- iterateM f = loop where
---   loop ma  = Effect $ do
---     a <- ma
---     return (Step (a :> loop (f a)))
--- {-# INLINABLE iterateM #-}
---
---
---
+-- ---------------
+-- iterate
+-- ---------------
+
+-- | Iterate a pure function from a seed value, streaming the results forever
+iterate :: forall a m r. LMonad m
+        => (a -> a) -> a -> Stream (LOf a) m r
+iterate f = loop where
+  loop :: a -> Stream (LOf a) m r
+  loop a = Effect $ return $ Step $ a :> loop (f a)
+{-# INLINABLE iterate #-}
+
+-- | Iterate a monadic function from a seed value, streaming the results forever
+iterateM :: forall a m r. LMonad m
+         => (a -> m a) -> m a ⊸ Stream (LOf a) m r
+iterateM f = loop where
+  loop :: m a ⊸ Stream (LOf a) m r
+  loop ma = Effect $ do
+    a <- ma
+    return $ Step $ a :> loop (f a)
+{-# INLINABLE iterateM #-}
+
+
+
 -- last :: Monad m => Stream (Of a) m r -> m (Of (Maybe a) r)
 -- last = loop Nothing_ where
 --   loop mb str = case str of
