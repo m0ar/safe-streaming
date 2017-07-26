@@ -1591,21 +1591,21 @@ replicateM n ma = loop n where
     return $ Step $ a :> loop (n-1)
 {-# INLINABLE replicateM #-}
 
--- {-| Read an @IORef (Maybe a)@ or a similar device until it reads @Nothing@.
---     @reread@ provides convenient exit from the @io-streams@ library
---
--- > reread readIORef    :: IORef (Maybe a) -> Stream (Of a) IO ()
--- > reread Streams.read :: System.IO.Streams.InputStream a -> Stream (Of a) IO ()
--- -}
--- reread :: Monad m => (s -> m (Maybe a)) -> s -> Stream (Of a) m ()
--- reread step s = loop where
---   loop = Effect $ do
---     m <- step s
---     case m of
---       Nothing -> return (Return ())
---       Just a  -> return (Step (a :> loop))
--- {-# INLINABLE reread #-}
---
+{-| Read an @IORef (Maybe a)@ or a similar device until it reads @Nothing@.
+    @reread@ provides convenient exit from the @io-streams@ library
+
+> reread readIORef    :: IORef (Maybe a) -> Stream (Of a) IO ()
+> reread Streams.read :: System.IO.Streams.InputStream a -> Stream (Of a) IO ()
+-}
+reread :: LMonad m => (s -> m (Maybe a)) -> s -> Stream (LOf a) m ()
+reread step s = loop where
+  loop = Effect $ do
+    m <- step s
+    case m of
+      Nothing -> return (Return ())
+      Just a  -> return $ Step $ a :> loop
+{-# INLINABLE reread #-}
+
 -- {-| Strict left scan, streaming, e.g. successive partial results. The seed
 --     is yielded first, before any action of finding the next element is performed.
 --
