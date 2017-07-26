@@ -1026,37 +1026,36 @@ foldM step begin done str = do
 --   where seq = Prelude.seq
 -- {-#INLINE foldM #-}
 
--- {-| A natural right fold for consuming a stream of elements.
---     See also the more general 'iterTM' in the 'Streaming' module
---     and the still more general 'destroy'
---
--- > foldrT (\a p -> Streaming.yield a >> p) = id
--- > foldrT (\a p -> Pipes.yield a     >> p) :: Monad m => Stream (Of a) m r -> Producer a m r
--- > foldrT (\a p -> Conduit.yield a   >> p) :: Monad m => Stream (Of a) m r -> Conduit a m r
---
--- -}
---
--- foldrT :: (Monad m, MonadTrans t, Monad (t m))
---        => (a -> t m r -> t m r) -> Stream (Of a) m r -> t m r
--- foldrT step = loop where
---   loop stream = case stream of
---     Return r       -> return r
---     Effect m       -> lift m >>= loop
---     Step (a :> as) -> step a (loop as)
--- {-# INLINABLE foldrT #-}
---
--- {-| A natural right fold for consuming a stream of elements.
---     See also the more general 'iterT' in the 'Streaming' module and the
---     still more general 'destroy'
--- -}
--- foldrM :: Monad m
---        => (a -> m r -> m r) -> Stream (Of a) m r -> m r
--- foldrM step = loop where
---   loop stream = case stream of
---     Return r       -> return r
---     Effect m       -> m >>= loop
---     Step (a :> as) -> step a (loop as)
--- {-# INLINABLE foldrM #-}
+{-| A natural right fold for consuming a stream of elements.
+    See also the more general 'iterTM' in the 'Streaming' module
+    and the still more general 'destroy'
+
+> foldrT (\a p -> Streaming.yield a >> p) = id
+> foldrT (\a p -> Pipes.yield a     >> p) :: Monad m => Stream (Of a) m r -> Producer a m r
+> foldrT (\a p -> Conduit.yield a   >> p) :: Monad m => Stream (Of a) m r -> Conduit a m r
+
+-}
+foldrT :: forall a t m r. (LMonad m, LMonadTrans t, LMonad (t m))
+       => (a -> t m r ⊸ t m r) -> Stream (LOf a) m r ⊸ t m r
+foldrT step = loop where
+  loop :: Stream (LOf a) m r ⊸ t m r
+  loop (Return r) = return r
+  loop (Effect m) = lift m >>= loop
+  loop (Step (a :> as)) = step a (loop as)
+{-# INLINABLE foldrT #-}
+
+{-| A natural right fold for consuming a stream of elements.
+    See also the more general 'iterT' in the 'Streaming' module and the
+    still more general 'destroy'
+-}
+foldrM :: forall a m r. LMonad m
+       => (a -> m r ⊸ m r) -> Stream (LOf a) m r ⊸ m r
+foldrM step = loop where
+  loop :: Stream (LOf a) m r ⊸ m r
+  loop (Return r) = return r
+  loop (Effect m) = m >>= loop
+  loop (Step (a :> as)) = step a (loop as)
+{-# INLINABLE foldrM #-}
 
 -- ---------------
 -- for
