@@ -1197,19 +1197,17 @@ iterateM f = loop where
 {-# INLINABLE iterateM #-}
 
 
+last :: LMonad m => Stream (LOf a) m r ⊸ m (LOf (Maybe a) r)
+last = loop Nothing where
+  loop mb (Return r) = case mb of
+    Nothing -> return $ Nothing :> r
+    Just a  -> return $ Just a :> r
+  loop mb (Effect m) = m >>= loop mb
+  loop mb (Step (a :> rest)) = loop (Just a) rest
+{-#INLINABLE last #-}
 
--- last :: Monad m => Stream (Of a) m r -> m (Of (Maybe a) r)
--- last = loop Nothing_ where
---   loop mb str = case str of
---     Return r            -> case mb of
---       Nothing_ -> return (Nothing :> r)
---       Just_ a  -> return (Just a :> r)
---     Effect m            -> m >>= loop mb
---     Step (a :> rest)  -> loop (Just_ a) rest
--- {-#INLINABLE last #-}
---
---
---
+
+-- Incompatible with LOf
 -- last_ :: Monad m => Stream (Of a) m r -> m (Maybe a)
 -- last_ = loop Nothing_ where
 --   loop mb str = case str of
@@ -1219,12 +1217,13 @@ iterateM f = loop where
 --     Effect m            -> m >>= loop mb
 --     Step (a :> rest)  -> loop (Just_ a) rest
 -- {-#INLINABLE last_ #-}
---
---
--- -- ---------------
--- -- length
--- -- ---------------
---
+
+
+-- ---------------
+-- length
+-- ---------------
+
+-- Incompatible with LOf
 -- {-| Run a stream, remembering only its length:
 --
 -- >>> S.length $ S.each [1..10]
@@ -1234,20 +1233,22 @@ iterateM f = loop where
 -- length_ :: Monad m => Stream (Of a) m r -> m Int
 -- length_ = fold_ (\n _ -> n + 1) 0 id
 -- {-#INLINE length_#-}
---
--- {-| Run a stream, keeping its length and its return value.
---
--- >>> S.print $ mapped S.length $ chunksOf 3 $ S.each [1..10]
--- 3
--- 3
--- 3
--- 1
---
--- -}
---
--- length :: Monad m => Stream (Of a) m r -> m (Of Int r)
--- length = fold (\n _ -> n + 1) 0 id
--- {-#INLINE length #-}
+
+
+{-| Run a stream, keeping its length and its return value.
+
+>>> S.print $ mapped S.length $ chunksOf 3 $ S.each [1..10]
+3
+3
+3
+1
+
+-}
+length :: LMonad m => Stream (LOf a) m r ⊸ m (LOf Int r)
+length = fold (\n _ -> n + 1) 0 id
+{-#INLINE length #-}
+
+
 -- -- ---------------
 -- -- map
 -- -- ---------------
