@@ -744,14 +744,13 @@ effects (Step (_ :> rest)) = effects rest
 -}
 elem :: forall a m r. (LMonad m, Eq a)
      => a -> Stream (LOf a) m r ⊸ m (LOf Bool r)
-elem a' = loop False where
-  loop :: Bool -> Stream (LOf a) m r ⊸ m (LOf Bool r)
-  loop True str = (True :>) <$> effects str
-  loop False (Return r) = return $ False :> r
-  loop False (Effect m) = m >>= loop False
-  loop False (Step (a :> rest)) = case a == a' of
+elem a' = loop where
+  loop :: Stream (LOf a) m r ⊸ m (LOf Bool r)
+  loop (Return r) = return $ False :> r
+  loop (Effect m) = m >>= loop
+  loop (Step (a :> rest)) = case a == a' of
     True  -> (True :>) <$> effects rest
-    False -> loop False rest
+    False -> loop rest
 {-#INLINABLE elem #-}
 
 -- Incompatible with LOf, since it throws the resulting @r@ away
@@ -1425,22 +1424,19 @@ next (Step (a :> rest)) = return $ Right (a, rest)
 {-# INLINABLE next #-}
 
 
--- {-| Exhaust a stream deciding whether @a@ was an element.
---
--- -}
---
--- notElem :: (Monad m, Eq a) => a -> Stream (Of a) m r -> m (Of Bool r)
--- notElem a' = loop True where
---   loop False str = liftM (False :>) (effects str)
---   loop True str = case str of
---     Return r -> return (True:> r)
---     Effect m -> m >>= loop True
---     Step (a:> rest) ->
---       if a == a'
---         then liftM (False :>) (effects rest)
---         else loop True rest
--- {-#INLINABLE notElem #-}
---
+-- | Exhaust a stream deciding whether @a@ was an element.
+notElem :: forall a m r. (LMonad m, Eq a)
+        => a -> Stream (LOf a) m r ⊸ m (LOf Bool r)
+notElem a' = loop where
+  loop :: Stream (LOf a) m r ⊸ m (LOf Bool r)
+  loop (Return r) = return $ True :> r
+  loop (Effect m) = m >>= loop
+  loop (Step (a :> rest)) = case a == a' of
+    True  -> (False :>) <$> effects rest
+    False -> loop rest
+{-#INLINABLE notElem #-}
+
+-- Incompatible with LOf
 -- notElem_ :: (Monad m, Eq a) => a -> Stream (Of a) m r -> m Bool
 -- notElem_ a' = loop True where
 --   loop False str = return False
@@ -1452,8 +1448,8 @@ next (Step (a :> rest)) = return $ Right (a, rest)
 --         then return False
 --         else loop True rest
 -- {-#INLINABLE notElem_ #-}
---
---
+
+
 -- {-|
 -- > filter p = hoist effects (partition p)
 --
