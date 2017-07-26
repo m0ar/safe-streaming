@@ -1497,21 +1497,20 @@ partitionEithers (Step (Right b :> rest)) = Effect $ do
   yield b
   return $ partitionEithers rest
 
+-- | Fold a 'Stream' of numbers into their product
+product_ :: (LMonad m, Num a) => Stream (LOf a) m () ⊸ m a
+product_ = fold_ (*) 1 id
+{-# INLINE product_ #-}
 
--- -- | Fold a 'Stream' of numbers into their product
--- product_ :: (Monad m, Num a) => Stream (Of a) m () -> m a
--- product_ = fold_ (*) 1 id
--- {-# INLINE product_ #-}
---
--- {-| Fold a 'Stream' of numbers into their product with the return value
---
--- >  maps' product' :: Stream (Stream (Of Int)) m r -> Stream (Of Int) m r
--- -}
--- product :: (Monad m, Num a) => Stream (Of a) m r -> m (Of a r)
--- product = fold (*) 1 id
--- {-# INLINE product #-}
---
---
+{-| Fold a 'Stream' of numbers into their product with the return value
+
+>  maps' product' :: Stream (Stream (Of Int)) m r -> Stream (Of Int) m r
+-}
+product :: (LMonad m, Num a) => Stream (LOf a) m r ⊸ m (LOf a r)
+product = fold (*) 1 id
+{-# INLINE product #-}
+
+
 -- -- ---------------
 -- -- read
 -- -- ---------------
