@@ -811,19 +811,17 @@ enumFromThen first second = Streaming.Prelude.map toEnum (loop _first)
     loop !s =  Step $ s :> loop (s+diff)
 {-# INLINABLE enumFromThen #-}
 
--- -- ---------------
--- -- erase
--- -- ---------------
--- {- | Remove the elements from a stream of values, retaining the structure of layers.
--- -}
--- erase :: Monad m => Stream (Of a) m r -> Stream Identity m r
--- erase = loop where
---   loop str = case str of
---     Return r -> Return r
---     Effect m -> Effect (liftM loop m)
---     Step (a:>rest) -> Step (Identity (loop rest))
--- {-# INLINABLE erase #-}
---
+-- ---------------
+-- erase
+-- ---------------
+
+-- | Remove the elements from a stream of values, retaining the structure of layers.
+erase :: LMonad m => Stream (LOf a) m r ⊸ Stream Identity m r
+erase (Return r) = Return r
+erase (Effect m) = Effect $ fmap erase m
+erase (Step (a :> rest)) = Step $ Identity $ erase rest
+{-# INLINABLE erase #-}
+
 -- ---------------
 -- filter
 -- ---------------
