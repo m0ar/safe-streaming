@@ -239,11 +239,11 @@ import Streaming.Internal
 import Control.Monad.LMonad
 import Data.Functor.LFunctor
 import Control.Applicative.LApplicative
+import Control.Monad.Trans.LClass
 
 import Data.Data ( Data, Typeable )
 import Data.Functor.Identity
 import Data.Functor.Sum
-import Control.Monad.Trans
 
 import qualified Prelude as Prelude
 import Data.Foldable (Foldable)
@@ -607,35 +607,36 @@ cycle = forever
 --         liftIO $ threadDelay pico
 --         loop rest
 -- {-#INLINABLE delay #-}
---
---
---
--- {-| Where a transformer returns a stream, run the effects of the stream, keeping
---    the return value. This is usually used at the type
---
--- > drained :: Monad m => Stream (Of a) m (Stream (Of b) m r) -> Stream (Of a) m r
--- > drained = join . fmap (lift . effects)
---
---    Here, for example, we split a stream in two places and throw out the middle segment:
---
--- >>> rest <- S.print $ S.drained $ S.splitAt 2 $ S.splitAt 5 $ each [1..7]
--- 1
--- 2
--- >>> S.print rest
--- 6
--- 7
---
---    In particular, we can define versions  of @take@ and @takeWhile@ which
---    retrieve the return value of the rest of the stream - and which can
---    thus be used with 'maps':
---
--- > take' n = S.drained . S.splitAt n
--- > takeWhile' thus = S.drained . S.span thus
---
--- -}
--- drained :: (Monad m, Monad (t m), Functor (t m), MonadTrans t) => t m (Stream (Of a) m r) -> t m r
--- drained = join . fmap (lift . effects)
--- {-#INLINE drained #-}
+
+
+
+{-| Where a transformer returns a stream, run the effects of the stream, keeping
+   the return value. This is usually used at the type
+
+> drained :: Monad m => Stream (Of a) m (Stream (Of b) m r) -> Stream (Of a) m r
+> drained = join . fmap (lift . effects)
+
+   Here, for example, we split a stream in two places and throw out the middle segment:
+
+>>> rest <- S.print $ S.drained $ S.splitAt 2 $ S.splitAt 5 $ each [1..7]
+1
+2
+>>> S.print rest
+6
+7
+
+   In particular, we can define versions  of @take@ and @takeWhile@ which
+   retrieve the return value of the rest of the stream - and which can
+   thus be used with 'maps':
+
+> take' n = S.drained . S.splitAt n
+> takeWhile' thus = S.drained . S.span thus
+
+-}
+drained :: (LMonad m, LMonad (t m), LFunctor (t m), LMonadTrans t)
+        => t m (Stream (LOf a) m r) -> t m r
+drained = join . fmap (lift . effects)
+{-#INLINE drained #-}
 
 -- ---------------
 -- drop
