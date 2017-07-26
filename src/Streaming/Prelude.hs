@@ -1606,70 +1606,70 @@ reread step s = loop where
       Just a  -> return $ Step $ a :> loop
 {-# INLINABLE reread #-}
 
--- {-| Strict left scan, streaming, e.g. successive partial results. The seed
---     is yielded first, before any action of finding the next element is performed.
---
---
--- >>> S.print $ S.scan (++) "" id $ each (words "a b c d")
--- ""
--- "a"
--- "ab"
--- "abc"
--- "abcd"
---
---     'scan' is fitted for use with @Control.Foldl@, thus:
---
--- >>> S.print $ L.purely S.scan L.list $ each [3..5]
--- []
--- [3]
--- [3,4]
--- [3,4,5]
---
--- -}
--- scan :: Monad m => (x -> a -> x) -> x -> (x -> b) -> Stream (Of a) m r -> Stream (Of b) m r
--- scan step begin done str = Step (done begin :> loop begin str)
---   where
---   loop !acc stream = do
---     case stream of
---       Return r -> Return r
---       Effect m -> Effect (liftM (loop acc) m)
---       Step (a :> rest) ->
---         let !acc' = step acc a
---         in Step (done acc' :> loop acc' rest)
--- {-#INLINABLE scan #-}
---
--- {-| Strict left scan, accepting a monadic function. It can be used with
---     'FoldM's from @Control.Foldl@ using 'impurely'. Here we yield
---     a succession of vectors each recording
---
--- >>> let v =  L.impurely scanM L.vector $ each [1..4::Int] :: Stream (Of (U.Vector Int)) IO ()
--- >>> S.print v
--- fromList []
--- fromList [1]
--- fromList [1,2]
--- fromList [1,2,3]
--- fromList [1,2,3,4]
---
--- -}
--- scanM :: Monad m => (x -> a -> m x) -> m x -> (x -> m b) -> Stream (Of a) m r -> Stream (Of b) m r
--- scanM step begin done str = Effect $ do
---     x <- begin
---     b <- done x
---     return (Step (b :> loop x str))
---   where
---     loop !x stream = case stream of -- note we have already yielded from x
---       Return r -> Return r
---       Effect m  -> Effect (do
---         stream' <- m
---         return (loop x stream')
---         )
---       Step (a :> rest) -> Effect (do
---         x' <- step x a
---         b   <- done x'
---         return (Step (b :> loop x' rest))
---         )
--- {-# INLINABLE scanM #-}
---
+{-| Strict left scan, streaming, e.g. successive partial results. The seed
+    is yielded first, before any action of finding the next element is performed.
+
+
+>>> S.print $ S.scan (++) "" id $ each (words "a b c d")
+""
+"a"
+"ab"
+"abc"
+"abcd"
+
+    'scan' is fitted for use with @Control.Foldl@, thus:
+
+>>> S.print $ L.purely S.scan L.list $ each [3..5]
+[]
+[3]
+[3,4]
+[3,4,5]
+
+-}
+scan :: forall a b m x r. LMonad m
+     => (x -> a -> x) -> x -> (x -> b)
+     -> Stream (LOf a) m r ⊸ Stream (LOf b) m r
+scan step begin done str = Step (done begin :> loop begin str)
+  where
+    loop :: x -> Stream (LOf a) m r ⊸ Stream (LOf b) m r
+    loop !acc (Return r) = Return r
+    loop !acc (Effect m) = Effect $ fmap (loop acc) m
+    loop !acc (Step (a :> rest)) = let !acc' = step acc a
+                                   in Step $ done acc' :> loop acc' rest
+{-#INLINABLE scan #-}
+
+{-| Strict left scan, accepting a monadic function. It can be used with
+    'FoldM's from @Control.Foldl@ using 'impurely'. Here we yield
+    a succession of vectors each recording
+
+>>> let v =  L.impurely scanM L.vector $ each [1..4::Int] :: Stream (Of (U.Vector Int)) IO ()
+>>> S.print v
+fromList []
+fromList [1]
+fromList [1,2]
+fromList [1,2,3]
+fromList [1,2,3,4]
+
+-}
+scanM :: forall a b m x r. LMonad m
+      => (x -> a -> m x) -> m x -> (x -> m b)
+      -> Stream (LOf a) m r ⊸ Stream (LOf b) m r
+scanM step begin done str = Effect $ do
+    x <- begin
+    b <- done x
+    return $ Step $ b :> loop x str
+  where
+    loop :: x -> Stream (LOf a) m r ⊸ Stream (LOf b) m r
+    loop !x (Return r) = Return r -- note we have already yielded from x
+    loop !x (Effect m) = Effect $ do
+      stream' <- m
+      return $ loop x stream'
+    loop !x (Step (a :> rest)) = Effect $ do
+      x' <- step x a
+      b  <- done x'
+      return $ Step $ b :> loop x' rest
+{-# INLINABLE scanM #-}
+
 -- {- Label each element in a stream with a value accumulated according to a fold.
 --
 --
