@@ -973,58 +973,59 @@ fold step begin done str =  fold_loop str begin
                                       in fold_loop rest sxa
 {-# INLINE fold #-}
 
-
+-- Not compatible with LOf.
 -- {-| Strict, monadic fold of the elements of a 'Stream (Of a)'
 --
 -- > Control.Foldl.impurely foldM :: Monad m => FoldM a b -> Stream (Of a) m () -> m b
 -- -}
 -- foldM_
---     :: Monad m
---     => (x -> a -> m x) -> m x -> (x -> m b) -> Stream (Of a) m r -> m b
+    -- :: Monad m
+    -- => (x -> a -> m x) -> m x -> (x -> m b) -> Stream (LOf a) m r -> m b
 -- foldM_ step begin done  = liftM (\(a :> rest) -> a) . foldM step begin done
 -- {-#INLINE foldM_ #-}
---
--- {-| Strict, monadic fold of the elements of a 'Stream (Of a)'
---
--- > Control.Foldl.impurely foldM' :: Monad m => FoldM a b -> Stream (Of a) m r -> m (b, r)
---
---    Thus to accumulate the elements of a stream as a vector, together with a random
---    element we might write:
---
--- >>>  L.impurely S.foldM (liftA2 (,) L.vector L.random) $ each [1..10::Int] :: IO (Of (U.Vector Int,Maybe Int) ())
--- ([1,2,3,4,5,6,7,8,9,10],Just 9) :> ()
---
--- -}
--- foldM
---     :: Monad m
---     => (x -> a -> m x) -> m x -> (x -> m b) -> Stream (Of a) m r ->m (Of b r)
---
+
+{-| Strict, monadic fold of the elements of a 'Stream (Of a)'
+
+> Control.Foldl.impurely foldM' :: Monad m => FoldM a b -> Stream (Of a) m r -> m (b, r)
+
+   Thus to accumulate the elements of a stream as a vector, together with a random
+   element we might write:
+
+>>>  L.impurely S.foldM (liftA2 (,) L.vector L.random) $ each [1..10::Int] :: IO (Of (U.Vector Int,Maybe Int) ())
+([1,2,3,4,5,6,7,8,9,10],Just 9) :> ()
+
+-}
+foldM :: forall x a m b r. LMonad m
+    => (x -> a -> m x) -> m x -> (x -> m b)
+    -> Stream (LOf a) m r ⊸ m (LOf b r)
+foldM step begin done str = do
+    x0 <- begin
+    loop x0 str
+  where
+    loop :: x -> Stream (LOf a) m r ⊸ m (LOf b r)
+    loop !x (Return r) = do
+      b <- done x
+      return $ b :> r
+    loop !x (Effect m) = m >>= \s -> loop x s
+    loop !x (Step (a :> rest)) = do
+      x' <- step x a
+      loop x' rest
+{-# INLINABLE foldM #-}
+
+-- the following requires GHC.Magic.oneShot:
 -- foldM step begin done str = do
---     x0 <- begin
---     loop str x0
---   where
---     loop stream !x = case stream of
---       Return r         -> done x >>= \b -> return (b :> r)
---       Effect m          -> m >>= \s -> loop s x
---       Step (a :> rest) -> do
---         x' <- step x a
---         loop rest x'
--- {-# INLINABLE foldM #-}
---
--- -- the following requires GHC.Magic.oneShot:
--- -- foldM step begin done str = do
--- --       x <- begin
--- --       (x' :> r) <- streamFold
--- --         (\r x -> return (x :> r))
--- --         (\mx2mx -> oneShot (\x -> x `seq` mx2mx >>= ($ x) ))
--- --         (\(a :> x2mx') -> oneShot (\x -> x `seq` (step x a >>= x2mx')) )
--- --         ( str)
--- --         x
--- --       b <- done x'
--- --       return (b :> r)
--- --   where seq = Prelude.seq
--- -- {-#INLINE foldM #-}
---
+--       x <- begin
+--       (x' :> r) <- streamFold
+--         (\r x -> return (x :> r))
+--         (\mx2mx -> oneShot (\x -> x `seq` mx2mx >>= ($ x) ))
+--         (\(a :> x2mx') -> oneShot (\x -> x `seq` (step x a >>= x2mx')) )
+--         ( str)
+--         x
+--       b <- done x'
+--       return (b :> r)
+--   where seq = Prelude.seq
+-- {-#INLINE foldM #-}
+
 -- {-| A natural right fold for consuming a stream of elements.
 --     See also the more general 'iterTM' in the 'Streaming' module
 --     and the still more general 'destroy'
