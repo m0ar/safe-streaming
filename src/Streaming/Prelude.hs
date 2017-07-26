@@ -671,33 +671,32 @@ drop n str = loop n str where
   loop n (Step (a :> as)) = loop (n-1) as
 {-# INLINABLE drop #-}
 
--- -- ---------------
--- -- dropWhile
--- -- ---------------
---
--- {- | Ignore elements of a stream until a test succeeds, retaining the rest.
---
--- >>> S.print $ S.dropWhile ((< 5) . length) S.stdinLn
--- one<Enter>
--- two<Enter>
--- three<Enter>
--- "three"
--- four<Enter>
--- "four"
--- ^CInterrupted.
---
---
--- -}
--- dropWhile :: Monad m => (a -> Bool) -> Stream (Of a) m r -> Stream (Of a) m r
--- dropWhile pred = loop where
---   loop stream = case stream of
---     Return r       -> Return r
---     Effect ma       -> Effect (liftM loop ma)
---     Step (a :> as) -> if pred a
---       then loop as
---       else Step (a :> as)
--- {-# INLINABLE dropWhile #-}
---
+-- ---------------
+-- dropWhile
+-- ---------------
+
+{- | Ignore elements of a stream until a test succeeds, retaining the rest.
+
+>>> S.print $ S.dropWhile ((< 5) . length) S.stdinLn
+one<Enter>
+two<Enter>
+three<Enter>
+"three"
+four<Enter>
+"four"
+^CInterrupted.
+-}
+dropWhile :: forall a m r. LMonad m
+          => (a -> Bool) -> Stream (LOf a) m r ⊸ Stream (LOf a) m r
+dropWhile pred = loop where
+  loop :: Stream (LOf a) m r ⊸ Stream (LOf a) m r
+  loop (Return r)  = Return r
+  loop (Effect ma) = Effect $ fmap loop ma
+  loop (Step (a :> as)) = case pred a of
+    True  -> loop as
+    False -> Step $ a :> as
+{-# INLINABLE dropWhile #-}
+
 -- -- ---------------
 -- -- each
 -- -- ---------------
