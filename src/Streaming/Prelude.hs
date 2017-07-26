@@ -1362,7 +1362,9 @@ mapped = mapsM
 -- mconcat = fold mappend mempty id
 -- {-#INLINE mconcat #-}
 --
--- data Maybe_ a = Just_ !a | Nothing_
+-- | Strict maybe
+data Maybe_ a = Just_ !a | Nothing_
+
 -- mconcat_ :: (Monad m, Monoid w) => Stream (Of w) m r -> m w
 -- mconcat_ = fold_ mappend mempty id
 --
