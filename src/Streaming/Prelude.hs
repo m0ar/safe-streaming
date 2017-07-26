@@ -1269,86 +1269,87 @@ map f =  maps (\(x :> rest) -> f x :> rest)
 --      Step (a :> as) -> Step (f a :> loop as)
 {-# INLINABLE map #-}
 
--- {-| Replace each element of a stream with the result of a monadic action
---
--- >>> S.print $ S.mapM readIORef $ S.chain (\ior -> modifyIORef ior (*100)) $ S.mapM newIORef $ each [1..6]
--- 100
--- 200
--- 300
--- 400
--- 500
--- 600
--- -}
--- mapM :: Monad m => (a -> m b) -> Stream (Of a) m r -> Stream (Of b) m r
--- mapM f = loop where
---   loop str = case str of
---     Return r       -> Return r
---     Effect m        -> Effect (liftM loop m)
---     Step (a :> as) -> Effect $ do
---       a' <- f a
---       return (Step (a' :> loop as) )
--- {-# INLINABLE mapM #-}
---
---
---
--- {-| Reduce a stream to its return value with a monadic action.
---
--- >>> S.mapM_ Prelude.print $ each [1..3]
--- 1
--- 2
--- 3
---
---
--- >>> rest <- S.mapM_ Prelude.print $ S.splitAt 3 $ each [1..10]
--- 1
--- 2
--- 3
--- >>> S.sum rest
--- 49 :> ()
---
--- -}
--- mapM_ :: Monad m => (a -> m b) -> Stream (Of a) m r -> m r
--- mapM_ f = loop where
---   loop str = case str of
---     Return r       -> return r
---     Effect m        -> m >>= loop
---     Step (a :> as) -> do
---       f a
---       loop as
--- {-# INLINABLE mapM_ #-}
---
---
---
--- {- | Map layers of one functor to another with a transformation involving the base monad.
---      This could be trivial, e.g.
---
--- > let noteBeginning text x = putStrLn text >> return text
---
---      this puts the
---      is completely functor-general
---
---      @maps@ and @mapped@ obey these rules:
---
--- > maps id              = id
--- > mapped return        = id
--- > maps f . maps g      = maps (f . g)
--- > mapped f . mapped g  = mapped (f <=< g)
--- > maps f . mapped g    = mapped (liftM f . g)
--- > mapped f . maps g    = mapped (f <=< liftM g)
---
---      @maps@ is more fundamental than @mapped@, which is best understood as a convenience
---      for effecting this frequent composition:
---
--- > mapped phi = decompose . maps (Compose . phi)
---
---
--- -}
---
--- mapped :: (Monad m, Functor f) => (forall x . f x -> m (g x)) -> Stream f m r -> Stream g m r
--- mapped = mapsM
--- {-#INLINE mapped #-}
---
---
+{-| Replace each element of a stream with the result of a monadic action
+
+>>> S.print $ S.mapM readIORef $ S.chain (\ior -> modifyIORef ior (*100)) $ S.mapM newIORef $ each [1..6]
+100
+200
+300
+400
+500
+600
+-}
+mapM :: forall a m b r. LMonad m
+     => (a -> m b) -> Stream (LOf a) m r ⊸ Stream (LOf b) m r
+mapM f = loop where
+  loop :: Stream (LOf a) m r ⊸ Stream (LOf b) m r
+  loop (Return r) = Return r
+  loop (Effect m) = Effect $ fmap loop m
+  loop (Step (a :> as)) = Effect $ do
+    b <- f a
+    return $ Step $ b :> loop as
+{-# INLINABLE mapM #-}
+
+
+
+{-| Reduce a stream to its return value with a monadic action.
+
+>>> S.mapM_ Prelude.print $ each [1..3]
+1
+2
+3
+
+
+>>> rest <- S.mapM_ Prelude.print $ S.splitAt 3 $ each [1..10]
+1
+2
+3
+>>> S.sum rest
+49 :> ()
+
+-}
+mapM_ :: forall a m r. LMonad m
+      => (a -> m ()) -> Stream (LOf a) m r ⊸ m r
+mapM_ f = loop where
+  loop :: Stream (LOf a) m r ⊸ m r
+  loop (Return r) = return r
+  loop (Effect m) = m >>= loop
+  loop (Step (a :> as)) = do
+    f a
+    loop as
+{-# INLINABLE mapM_ #-}
+
+
+
+{- | Map layers of one functor to another with a transformation involving the base monad.
+     This could be trivial, e.g.
+
+> let noteBeginning text x = putStrLn text >> return text
+
+     this puts the
+     is completely functor-general
+
+     @maps@ and @mapped@ obey these rules:
+
+> maps id              = id
+> mapped return        = id
+> maps f . maps g      = maps (f . g)
+> mapped f . mapped g  = mapped (f <=< g)
+> maps f . mapped g    = mapped (liftM f . g)
+> mapped f . maps g    = mapped (f <=< liftM g)
+
+     @maps@ is more fundamental than @mapped@, which is best understood as a convenience
+     for effecting this frequent composition:
+
+> mapped phi = decompose . maps (Compose . phi)
+
+-}
+mapped :: (LMonad m, LFunctor f)
+       => (forall x . f x -> m (g x)) -> Stream f m r ⊸ Stream g m r
+mapped = mapsM
+{-#INLINE mapped #-}
+
+
 -- {-| Fold streamed items into their monoidal sum
 --
 -- >>> S.mconcat $ S.take 2 $ S.map (Data.Monoid.Last . Just) (S.stdinLn)
