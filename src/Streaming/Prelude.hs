@@ -856,23 +856,20 @@ filterM pred = loop where
       False -> return $ loop as
 {-# INLINE filterM #-}  -- ~ 10% faster than INLINABLE in simple bench
 
--- -- -- ---------------
--- -- -- first
--- -- -- ---------------
--- -- {- | Take either the first item in a stream or the return value, if it is empty.
--- --      The typical mark of an infinite stream is a polymorphic return value; in
--- --      that case, 'first' is a sort of @safeHead@
--- --
--- --      To iterate an action returning a 'Maybe', until it succeeds.
--- --
--- -- -}
--- -- first :: Monad m => Stream (Of r) m r -> m r
--- -- first = loop where
--- --   loop str = case str of
--- --     Return r -> return r
--- --     Effect m -> m >>= loop
--- --     Step (r :> rest) -> return r
--- -- {-# INLINABLE first #-}
+-- Incompatible with LOf, since it throws away the return element
+-- {- | Take either the first item in a stream or the return value, if it is empty.
+     -- The typical mark of an infinite stream is a polymorphic return value; in
+     -- that case, 'first' is a sort of @safeHead@
+--
+     -- To iterate an action returning a 'Maybe', until it succeeds.
+-- -}
+-- first :: LMonad m => Stream (LOf r) m r -> m r
+-- first = loop where
+  -- loop str = case str of
+    -- Return r -> return r
+    -- Effect m -> m >>= loop
+    -- Step (r :> rest) -> return r
+-- {-# INLINABLE first #-}
 
 -- ---------------
 -- fold
