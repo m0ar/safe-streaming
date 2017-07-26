@@ -766,52 +766,51 @@ elem a' = loop False where
 --         then return True
 --         else loop False rest
 -- {-#INLINABLE elem_ #-}
---
--- -- -----
--- -- enumFrom
--- -- ------
---
--- {-| An infinite stream of enumerable values, starting from a given value.
---     It is the same as @S.iterate succ@.
---    Because their return type is polymorphic, @enumFrom@ and @enumFromThen@
---    (and @iterate@ are useful for example with @zip@
---    and @zipWith@, which require the same return type in the zipped streams.
---    With @each [1..]@ the following bit of connect-and-resume would be impossible:
---
--- >>> rest <- S.print $ S.zip (S.enumFrom 'a') $ S.splitAt 3 $ S.enumFrom 1
--- ('a',1)
--- ('b',2)
--- ('c',3)
--- >>>  S.print $ S.take 3 rest
--- 4
--- 5
--- 6
---
--- -}
--- enumFrom :: (Monad m, Enum n) => n -> Stream (Of n) m r
--- enumFrom = loop where
---   loop !n = Effect (return (Step (n :> loop (succ n))))
--- {-# INLINABLE enumFrom #-}
---
---
--- {-| An infinite sequence of enumerable values at a fixed distance, determined
---    by the first and second values. See the discussion of 'Streaming.enumFrom'
---
--- >>> S.print $ S.take 3 $ S.enumFromThen 100 200
--- 100
--- 200
--- 300
---
--- -}
--- enumFromThen:: (Monad m, Enum a) => a -> a -> Stream (Of a) m r
--- enumFromThen first second = Streaming.Prelude.map toEnum (loop _first)
---   where
---     _first = fromEnum first
---     _second = fromEnum second
---     diff = _second - _first
---     loop !s =  Step (s :> loop (s+diff))
--- {-# INLINABLE enumFromThen #-}
---
+
+-- -----
+-- enumFrom
+-- ------
+
+{-| An infinite stream of enumerable values, starting from a given value.
+    It is the same as @S.iterate succ@.
+   Because their return type is polymorphic, @enumFrom@ and @enumFromThen@
+   (and @iterate@ are useful for example with @zip@
+   and @zipWith@, which require the same return type in the zipped streams.
+   With @each [1..]@ the following bit of connect-and-resume would be impossible:
+
+>>> rest <- S.print $ S.zip (S.enumFrom 'a') $ S.splitAt 3 $ S.enumFrom 1
+('a',1)
+('b',2)
+('c',3)
+>>>  S.print $ S.take 3 rest
+4
+5
+6
+
+-}
+enumFrom :: (LMonad m, Enum n) => n -> Stream (LOf n) m r
+enumFrom !n = Effect $ return $ Step $ n :> enumFrom (succ n)
+{-# INLINABLE enumFrom #-}
+
+
+{-| An infinite sequence of enumerable values at a fixed distance, determined
+   by the first and second values. See the discussion of 'Streaming.enumFrom'
+
+>>> S.print $ S.take 3 $ S.enumFromThen 100 200
+100
+200
+300
+
+-}
+enumFromThen:: (LMonad m, Enum a) => a -> a -> Stream (LOf a) m r
+enumFromThen first second = Streaming.Prelude.map toEnum (loop _first)
+  where
+    _first = fromEnum first
+    _second = fromEnum second
+    diff = _second - _first
+    loop !s =  Step $ s :> loop (s+diff)
+{-# INLINABLE enumFromThen #-}
+
 -- -- ---------------
 -- -- erase
 -- -- ---------------
