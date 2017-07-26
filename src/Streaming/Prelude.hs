@@ -1074,31 +1074,34 @@ for str0 act = loop str0 where
     loop rest
 {-# INLINABLE for #-}
 
--- -- -| Group layers of any functor by comparisons on a preliminary annotation
---
--- -- groupedBy
--- --   :: (Monad m, Functor f) =>
--- --      (a -> a -> Bool)
--- --      -> Stream (Compose (Of a) f) m r
--- --      -> Stream (Stream (Compose (Of a) f) m) m r
--- -- groupedBy equals = loop  where
--- --   loop stream = Effect $ do
--- --         e <- inspect stream
--- --         return $ case e of
--- --             Left   r      -> Return r
--- --             Right s@(Compose (a :> p')) -> Step $
--- --                 fmap loop (Step $ Compose (a :> fmap (span' (equals a)) p'))
--- --   span' :: (Monad m, Functor f) => (a -> Bool) -> Stream (Compose (Of a) f) m r
--- --         -> Stream (Compose (Of a) f) m (Stream (Compose (Of a) f) m r)
--- --   span' pred = loop where
--- --     loop str = case str of
--- --       Return r         -> Return (Return r)
--- --       Effect m          -> Effect $ liftM loop m
--- --       Step s@(Compose (a :> rest)) -> case pred a  of
--- --         True  -> Step (Compose (a :> fmap loop rest))
--- --         False -> Return (Step s)
--- -- {-# INLINABLE groupedBy #-}
---
+-- | Group layers of any functor by comparisons on a preliminary annotation
+groupedBy :: forall a f m r. (LMonad m, LFunctor f)
+          => (a -> a -> Bool)
+          -> Stream (Compose (LOf a) f) m r
+          ⊸ Stream (Stream (Compose (LOf a) f) m) m r
+groupedBy equals = loop where
+  loop :: Stream (Compose (LOf a) f) m r
+       ⊸ Stream (Stream (Compose (LOf a) f) m) m r
+  loop stream = Effect $ do
+        e <- inspect stream
+        return $ case e of
+            Left   r -> Return r
+            Right s@(Compose (a :> p')) -> Step $
+                fmap loop (Step $ Compose (a :> fmap (span' (equals a)) p'))
+
+  span' :: (LMonad m, LFunctor f)
+        => (a -> Bool) -> Stream (Compose (LOf a) f) m r
+        ⊸ Stream (Compose (LOf a) f) m (Stream (Compose (LOf a) f) m r)
+  span' pred = loop where
+    loop :: Stream (Compose (LOf a) f) m r
+         ⊸ Stream (Compose (LOf a) f) m (Stream (Compose (LOf a) f) m r)
+    loop (Return r) = Return $ Return r
+    loop (Effect m) = Effect $ fmap loop m
+    loop (Step (Compose (a :> rest))) = case pred a of
+      True  -> Step $ Compose $ a :> fmap loop rest
+      False -> Return $ Step $ Compose $ a :> rest
+{-# INLINABLE groupedBy #-}
+
 -- {-| Group elements of a stream in accordance with the supplied comparison.
 --
 --
