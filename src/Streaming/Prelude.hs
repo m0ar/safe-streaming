@@ -1511,26 +1511,26 @@ product = fold (*) 1 id
 {-# INLINE product #-}
 
 
--- -- ---------------
--- -- read
--- -- ---------------
---
--- {- | Make a stream of strings into a stream of parsed values, skipping bad cases
---
--- >>> S.sum_ $ S.read $ S.takeWhile (/= "total") S.stdinLn :: IO Int
--- 1000<Enter>
--- 2000<Enter>
--- total<Enter>
--- 3000
---
---
--- -}
--- read :: (Monad m, Read a) => Stream (Of String) m r -> Stream (Of a) m r
--- read stream = for stream $ \str -> case readMaybe str of
---   Nothing -> return ()
---   Just r  -> yield r
--- {-# INLINE read #-}
---
+-- ---------------
+-- read
+-- ---------------
+
+{- | Make a stream of strings into a stream of parsed values, skipping bad cases
+
+>>> S.sum_ $ S.read $ S.takeWhile (/= "total") S.stdinLn :: IO Int
+1000<Enter>
+2000<Enter>
+total<Enter>
+3000
+
+-}
+read :: (LMonad m, Read a) => Stream (LOf String) m r -> Stream (LOf a) m r
+read stream = for stream $ \str -> case readMaybe str of
+  Nothing -> return ()
+  Just r  -> yield r
+{-# INLINE read #-}
+
+
 -- -- ---------------
 -- -- repeat
 -- -- ---------------
