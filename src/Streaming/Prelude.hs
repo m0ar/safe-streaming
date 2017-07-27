@@ -1995,76 +1995,76 @@ toList = fold (\diff a ls -> diff (a: ls)) id (\diff -> diff [])
 {-# INLINE toList #-}
 
 
--- {-| Inspect the first item in a stream of elements, without a return value.
---     @uncons@ provides convenient exit into another streaming type:
---
--- > IOStreams.unfoldM uncons :: Stream (Of a) IO b -> IO (InputStream a)
--- > Conduit.unfoldM uncons   :: Stream (Of a) m r -> Conduit.Source m a
---
--- -}
--- uncons :: Monad m => Stream (Of a) m () -> m (Maybe (a, Stream (Of a) m ()))
--- uncons = loop where
---   loop stream = case stream of
---     Return ()        -> return Nothing
---     Effect m          -> m >>= loop
---     Step (a :> rest) -> return (Just (a,rest))
--- {-# INLINABLE uncons #-}
---
---
--- {-| Build a @Stream@ by unfolding steps starting from a seed. In particular note
---     that @S.unfoldr S.next = id@.
---
---     The seed can of course be anything, but this is one natural way
---     to consume a @pipes@ 'Pipes.Producer'. Consider:
---
--- >>> S.stdoutLn $ S.take 2 $ S.unfoldr Pipes.next Pipes.stdinLn
--- hello<Enter>
--- hello
--- goodbye<Enter>
--- goodbye
---
--- >>> S.stdoutLn $ S.unfoldr Pipes.next (Pipes.stdinLn >-> Pipes.take 2)
--- hello<Enter>
--- hello
--- goodbye<Enter>
--- goodbye
---
--- >>> S.effects $ S.unfoldr Pipes.next (Pipes.stdinLn >-> Pipes.take 2 >-> Pipes.stdoutLn)
--- hello<Enter>
--- hello
--- goodbye<Enter>
--- goodbye
---
---     @Pipes.unfoldr S.next@ similarly unfolds a @Pipes.Producer@ from a stream.
---
--- -}
--- unfoldr :: Monad m
---         => (s -> m (Either r (a, s))) -> s -> Stream (Of a) m r
--- unfoldr step = loop where
---   loop s0 = Effect (do
---     e <- step s0
---     case e of
---       Left r      -> return (Return r)
---       Right (a,s) -> return (Step (a :> loop s)))
--- {-# INLINABLE unfoldr #-}
---
--- -- ---------------------------------------
--- -- untilRight
--- -- ---------------------------------------
--- untilRight :: Monad m => m (Either a r) -> Stream (Of a) m r
--- untilRight act = Effect loop where
---   loop = do
---     e <- act
---     case e of
---       Right r -> return (Return r)
---       Left a -> return (Step (a :> Effect loop))
--- {-#INLINABLE untilRight #-}
---
 -- -- ---------------------------------------
 -- -- with
 -- -- ---------------------------------------
 --
 -- {-| Replace each element in a stream of individual Haskell values (a @Stream (Of a) m r@) with an associated 'functorial' step.
+{-| Inspect the first item in a stream of elements, without a return value.
+    @uncons@ provides convenient exit into another streaming type:
+
+> IOStreams.unfoldM uncons :: Stream (Of a) IO b -> IO (InputStream a)
+> Conduit.unfoldM uncons   :: Stream (Of a) m r -> Conduit.Source m a
+
+-}
+uncons :: LMonad m => Stream (LOf a) m () -> m (Maybe (a, Stream (LOf a) m ()))
+uncons (Return ()) = return Nothing
+uncons (Effect m) = m >>= uncons
+uncons (Step (a :> rest)) = return $ Just (a,rest)
+{-# INLINABLE uncons #-}
+
+
+{-| Build a @Stream@ by unfolding steps starting from a seed. In particular note
+    that @S.unfoldr S.next = id@.
+
+    The seed can of course be anything, but this is one natural way
+    to consume a @pipes@ 'Pipes.Producer'. Consider:
+
+>>> S.stdoutLn $ S.take 2 $ S.unfoldr Pipes.next Pipes.stdinLn
+hello<Enter>
+hello
+goodbye<Enter>
+goodbye
+
+>>> S.stdoutLn $ S.unfoldr Pipes.next (Pipes.stdinLn >-> Pipes.take 2)
+hello<Enter>
+hello
+goodbye<Enter>
+goodbye
+
+>>> S.effects $ S.unfoldr Pipes.next (Pipes.stdinLn >-> Pipes.take 2 >-> Pipes.stdoutLn)
+hello<Enter>
+hello
+goodbye<Enter>
+goodbye
+
+    @Pipes.unfoldr S.next@ similarly unfolds a @Pipes.Producer@ from a stream.
+
+-}
+unfoldr :: forall a s m r. LMonad m
+        => (s -> m (Either r (a, s))) -> s -> Stream (LOf a) m r
+unfoldr step = loop where
+  loop :: s -> Stream (LOf a) m r
+  loop s0 = Effect $ do
+    e <- step s0
+    case e of
+      Left r      -> return $ Return r
+      Right (a,s) -> return $ Step $ a :> loop s
+{-# INLINABLE unfoldr #-}
+
+-- ---------------------------------------
+-- untilRight
+-- ---------------------------------------
+untilRight :: LMonad m => m (Either a r) -> Stream (LOf a) m r
+untilRight act = Effect loop where
+  loop = do
+    e <- act
+    case e of
+      Right r -> return $ Return r
+      Left a -> return $ Step $ a :> Effect loop
+{-#INLINABLE untilRight #-}
+
+
 --
 -- > for str f  = concats (with str f)
 -- > with str f = for str (yields . f)
