@@ -2644,63 +2644,60 @@ duplicate :: LMonad m
 duplicate = copy
 {-#INLINE duplicate #-}
 
--- {-| The type
---
--- > Data.List.unzip     :: [(a,b)] -> ([a],[b])
---
---    might lead us to expect
---
--- > Streaming.unzip :: Stream (Of (a,b)) m r -> Stream (Of a) m (Stream (Of b) m r)
---
---    which would not stream, since it would have to accumulate the second stream (of @b@s).
---    Of course, @Data.List@ 'Data.List.unzip' doesn't stream either.
---
---    This @unzip@ does
---    stream, though of course you can spoil this by using e.g. 'toList':
---
--- >>> let xs =  map (\x-> (x,show x)) [1..5::Int]
---
--- >>> S.toList $ S.toList $ S.unzip (S.each xs)
--- ["1","2","3","4","5"] :> ([1,2,3,4,5] :> ())
---
--- >>> Prelude.unzip xs
--- ([1,2,3,4,5],["1","2","3","4","5"])
---
---     Note the difference of order in the results. It may be of some use to think why.
---     The first application of 'toList' was applied to a stream of integers:
---
--- >>> :t S.unzip $ S.each xs
--- S.unzip $ S.each xs :: Monad m => Stream (Of Int) (Stream (Of String) m) ()
---
---     Like any fold, 'toList' takes no notice of the monad of effects.
---
--- > toList :: Monad m => Stream (Of a) m r -> m (Of [a] r)
---
---     In the case at hand (since I am in @ghci@) @m = Stream (Of String) IO@.
---     So when I apply 'toList', I exhaust that stream of integers, folding
---     it into a list:
---
--- >>> :t S.toList $ S.unzip $ S.each xs
--- S.toList $ S.unzip $ S.each xs
---   :: Monad m => Stream (Of String) m (Of [Int] ())
---
---     When I apply 'toList' to /this/, I reduce everything to an ordinary action in @IO@,
---     and return a list of strings:
---
--- >>> S.toList $ S.toList $ S.unzip (S.each xs)
--- ["1","2","3","4","5"] :> ([1,2,3,4,5] :> ())
---
--- -}
--- unzip :: Monad m =>  Stream (Of (a,b)) m r -> Stream (Of a) (Stream (Of b) m) r
--- unzip = loop where
---  loop str = case str of
---    Return r -> Return r
---    Effect m -> Effect (liftM loop (lift m))
---    Step ((a,b):> rest) -> Step (a :> Effect (Step (b :> Return (loop rest))))
--- {-#INLINABLE unzip #-}
---
---
---
+{-| The type
+
+> Data.List.unzip     :: [(a,b)] -> ([a],[b])
+
+   might lead us to expect
+
+> Streaming.unzip :: Stream (Of (a,b)) m r -> Stream (Of a) m (Stream (Of b) m r)
+
+   which would not stream, since it would have to accumulate the second stream (of @b@s).
+   Of course, @Data.List@ 'Data.List.unzip' doesn't stream either.
+
+   This @unzip@ does
+   stream, though of course you can spoil this by using e.g. 'toList':
+
+>>> let xs =  map (\x-> (x,show x)) [1..5::Int]
+
+>>> S.toList $ S.toList $ S.unzip (S.each xs)
+["1","2","3","4","5"] :> ([1,2,3,4,5] :> ())
+
+>>> Prelude.unzip xs
+([1,2,3,4,5],["1","2","3","4","5"])
+
+    Note the difference of order in the results. It may be of some use to think why.
+    The first application of 'toList' was applied to a stream of integers:
+
+>>> :t S.unzip $ S.each xs
+S.unzip $ S.each xs :: Monad m => Stream (Of Int) (Stream (Of String) m) ()
+
+    Like any fold, 'toList' takes no notice of the monad of effects.
+
+> toList :: Monad m => Stream (Of a) m r -> m (Of [a] r)
+
+    In the case at hand (since I am in @ghci@) @m = Stream (Of String) IO@.
+    So when I apply 'toList', I exhaust that stream of integers, folding
+    it into a list:
+
+>>> :t S.toList $ S.unzip $ S.each xs
+S.toList $ S.unzip $ S.each xs
+  :: Monad m => Stream (Of String) m (Of [Int] ())
+
+    When I apply 'toList' to /this/, I reduce everything to an ordinary action in @IO@,
+    and return a list of strings:
+
+>>> S.toList $ S.toList $ S.unzip (S.each xs)
+["1","2","3","4","5"] :> ([1,2,3,4,5] :> ())
+
+-}
+unzip :: LMonad m => Stream (LOf (a,b)) m r ⊸ Stream (LOf a) (Stream (LOf b) m) r
+unzip (Return r) = Return r
+unzip (Effect m) = Effect $ fmap unzip (lift m)
+unzip (Step ((a,b):> rest)) = Step $ a :> (Effect $ Step $ b :> Return (unzip rest))
+{-#INLINABLE unzip #-}
+
+
 -- {- $maybes
 --     These functions discard the 'Nothing's that they encounter. They are analogous
 --     to the functions from @Data.Maybe@ that share their names.
