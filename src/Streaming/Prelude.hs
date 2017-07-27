@@ -2376,107 +2376,109 @@ yield a = Step $ a :> Return ()
 --   r <- toHandle handle str
 --   release key
 --   return r
+
+-- -- * Producers
+-- -- $producers
+--   stdinLn  --
+-- , readLn --
+-- , fromHandle --
+-- , repeatM --
+-- , replicateM --
 --
--- -- -- * Producers
--- -- -- $producers
--- --   stdinLn  --
--- -- , readLn --
--- -- , fromHandle --
--- -- , repeatM --
--- -- , replicateM --
--- --
--- -- -- * Consumers
--- -- -- $consumers
--- -- , stdoutLn --
--- -- , stdoutLn' --
--- -- , mapM_ --
--- -- , print --
--- -- , toHandle --
--- -- , effects --
--- --
--- -- -- * Pipes
--- -- -- $pipes
--- -- , map --
--- -- , mapM --
--- -- , sequence --
--- -- , mapFoldable --
--- -- , filter --
--- -- , filterM --
--- -- , take --
--- -- , takeWhile --
--- -- , takeWhile' --
--- -- , drop --
--- -- , dropWhile --
--- -- , concat --
--- -- , elemIndices
--- -- , findIndices
--- -- , scan --
--- -- , scanM --
--- -- , chain --
--- -- , read --
--- -- , show --
--- -- , seq --
--- --
--- -- -- * Folds
--- -- -- $folds
--- -- , fold --
--- -- , fold' --
--- -- , foldM --
--- -- , foldM' --
--- -- , all
--- -- , any
--- -- , and
--- -- , or
--- -- , elem
--- -- , notElem
--- -- , find
--- -- , findIndex
--- -- , head
--- -- , index
--- -- , last
--- -- , length
--- -- , maximum
--- -- , minimum
--- -- , null
--- -- , sum --
--- -- , product --
--- -- , toList --
--- -- , toListM --
--- -- , toListM' --
--- --
--- -- -- * Zips
--- -- , zip --
--- -- , zipWith --
--- --
+-- -- * Consumers
+-- -- $consumers
+-- , stdoutLn --
+-- , stdoutLn' --
+-- , mapM_ --
+-- , print --
+-- , toHandle --
+-- , effects --
 --
--- distinguish :: (a -> Bool) -> Of a r -> Sum (Of a) (Of a) r
--- distinguish predicate (a :> b) = if predicate a then InR (a :> b) else InL (a :> b)
--- {-#INLINE distinguish #-}
+-- -- * Pipes
+-- -- $pipes
+-- , map --
+-- , mapM --
+-- , sequence --
+-- , mapFoldable --
+-- , filter --
+-- , filterM --
+-- , take --
+-- , takeWhile --
+-- , takeWhile' --
+-- , drop --
+-- , dropWhile --
+-- , concat --
+-- , elemIndices
+-- , findIndices
+-- , scan --
+-- , scanM --
+-- , chain --
+-- , read --
+-- , show --
+-- , seq --
 --
--- sumToEither ::Sum (Of a) (Of b) r ->  Of (Either a b) r
--- sumToEither s = case s of
---   InL (a :> r) -> Left a :> r
---   InR (b :> r) -> Right b :> r
--- {-#INLINE sumToEither #-}
+-- -- * Folds
+-- -- $folds
+-- , fold --
+-- , fold' --
+-- , foldM --
+-- , foldM' --
+-- , all
+-- , any
+-- , and
+-- , or
+-- , elem
+-- , notElem
+-- , find
+-- , findIndex
+-- , head
+-- , index
+-- , last
+-- , length
+-- , maximum
+-- , minimum
+-- , null
+-- , sum --
+-- , product --
+-- , toList --
+-- , toListM --
+-- , toListM' --
 --
--- eitherToSum :: Of (Either a b) r -> Sum (Of a) (Of b) r
--- eitherToSum s = case s of
---   Left a :> r  -> InL (a :> r)
---   Right b :> r -> InR (b :> r)
--- {-#INLINE eitherToSum #-}
+-- -- * Zips
+-- , zip --
+-- , zipWith --
 --
--- composeToSum ::  Compose (Of Bool) f r -> Sum f f r
--- composeToSum x = case x of
---   Compose (True :> f) -> InR f
---   Compose (False :> f) -> InL f
--- {-#INLINE composeToSum #-}
---
--- sumToCompose :: Sum f f r -> Compose (Of Bool) f r
--- sumToCompose x = case x of
---   InR f -> Compose (True :> f)
---   InL f -> Compose (False :> f)
--- {-#INLINE sumToCompose #-}
---
+
+distinguish :: (a -> Bool) -> LOf a r -> Sum (LOf a) (LOf a) r
+distinguish predicate (a :> b) = case predicate a of
+  True  -> InR (a :> b)
+  False -> InL (a :> b)
+{-#INLINE distinguish #-}
+
+sumToEither ::Sum (LOf a) (LOf b) r ->  LOf (Either a b) r
+sumToEither s = case s of
+  InL (a :> r) -> Left  a :> r
+  InR (b :> r) -> Right b :> r
+{-#INLINE sumToEither #-}
+
+eitherToSum :: LOf (Either a b) r -> Sum (LOf a) (LOf b) r
+eitherToSum s = case s of
+  Left  a :> r -> InL (a :> r)
+  Right b :> r -> InR (b :> r)
+{-#INLINE eitherToSum #-}
+
+composeToSum :: Compose (LOf Bool) f r -> Sum f f r
+composeToSum x = case x of
+  Compose (True  :> f) -> InR f
+  Compose (False :> f) -> InL f
+{-#INLINE composeToSum #-}
+
+sumToCompose :: Sum f f r -> Compose (LOf Bool) f r
+sumToCompose x = case x of
+  InR f -> Compose (True  :> f)
+  InL f -> Compose (False :> f)
+{-#INLINE sumToCompose #-}
+
 -- {-| Store the result of any suitable fold over a stream, keeping the stream for
 --     further manipulation. @store f = f . copy@ :
 --
