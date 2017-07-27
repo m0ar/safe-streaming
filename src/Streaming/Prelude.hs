@@ -1889,6 +1889,8 @@ splitAt = splitsAt
 -- -- ---------------
 -- -- take
 -- -- ---------------
+-- Everything related to take is particularly nonlinear; the only guarantee we
+-- _really_ care about is lost when we cut a stream early.
 --
 -- {-| End a stream after n elements; the original return value is thus lost.
 --     'splitAt' preserves this information. Note that, like @splitAt@, this
