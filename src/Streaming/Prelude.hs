@@ -2479,173 +2479,171 @@ sumToCompose x = case x of
   InL f -> Compose (False :> f)
 {-#INLINE sumToCompose #-}
 
--- {-| Store the result of any suitable fold over a stream, keeping the stream for
---     further manipulation. @store f = f . copy@ :
---
--- >>> S.print $ S.store S.product $ each [1..4]
--- 1
--- 2
--- 3
--- 4
--- 24 :> ()
---
--- >>> S.print $ S.store S.sum $ S.store S.product $ each [1..4]
--- 1
--- 2
--- 3
--- 4
--- 10 :> (24 :> ())
---
---    Here the sum (10) and the product (24) have been \'stored\' for use when
---    finally we have traversed the stream with 'print' . Needless to say,
---    a second 'pass' is excluded conceptually, so the
---    folds that you apply successively with @store@ are performed
---    simultaneously, and in constant memory -- as they would be if,
---    say, you linked them together with @Control.Fold@:
---
--- >>> L.impurely S.foldM (liftA3 (\a b c -> (b,c)) (L.sink print) (L.generalize L.sum) (L.generalize L.product)) $ each [1..4]
--- 1
--- 2
--- 3
--- 4
--- (10,24) :> ()
---
---    Fusing folds after the fashion of @Control.Foldl@ will generally be a bit faster
---    than the corresponding succession of uses of 'store', but by
---    constant factor that will be completely dwarfed when any IO is at issue.
---
---    But 'store' / 'copy' is /much/ more powerful, as you can see by reflecting on
---    uses like this:
---
--- >>> S.sum $ S.store (S.sum . mapped S.product . chunksOf 2) $ S.store (S.product . mapped S.sum . chunksOf 2 )$ each [1..6]
--- 21 :> (44 :> (231 :> ()))
---
---    It will be clear that this cannot be reproduced with any combination of lenses,
---    @Control.Fold@ folds, or the like.  (See also the discussion of 'copy'.)
---
---    It would conceivable be clearer to import a series of specializations of 'store'.
---    It is intended to be used at types like these:
---
--- > storeM ::  (forall s m . Monad m => Stream (Of a) m s -> m (Of b s))
--- >         -> (Monad n => Stream (Of a) n r -> Stream (Of a) n (Of b r))
--- > storeM = store
--- >
--- > storeMIO :: (forall s m . MonadIO m => Stream (Of a) m s -> m (Of b s))
--- >          -> ( MonadIO n => Stream (Of a) n r -> Stream (Of a) n (Of b r)
--- > storeMIO = store
---
---     It is clear from these types that we are just using the general instances:
---
--- > instance (Functor f, Monad m )  => Monad (Stream f m)
--- > instance (Functor f, MonadIO m) => MonadIO (Stream f m)
---
---     We thus can't be touching the elements of the stream, or the final return value.
---     It is the same with other constraints that @Stream (Of a)@ inherits from the underlying monad,
---     like 'MonadResource'.  Thus I can independently filter and write to one file, but
---     nub and write to another, or interact with a database and a logfile and the like:
---
--- >>> runResourceT $ (S.writeFile "hello2.txt" . S.nub) $ store (S.writeFile "hello.txt" . S.filter (/= "world")) $ each ["hello", "world", "goodbye", "world"]
--- >>> :! cat hello.txt
--- hello
--- goodbye
--- >>> :! cat hello2.txt
--- hello
--- world
--- goodbye
---
---
--- -}
--- store
---   :: Monad m =>
---      (Stream (Of a) (Stream (Of a) m) r -> t) -> Stream (Of a) m r -> t
--- store f x = f (copy x)
--- {-#INLINE store #-}
---
--- {-| Duplicate the content of stream, so that it can be acted on twice in different ways,
---     but without breaking streaming. Thus, with @each [1,2]@ I might do:
---
--- >>> S.print $ each ["one","two"]
--- "one"
--- "two"
--- >>> S.stdoutLn $ each ["one","two"]
--- one
--- two
---
---     With copy, I can do these simultaneously:
---
--- >>> S.print $ S.stdoutLn $ S.copy $ each ["one","two"]
--- one
--- "one"
--- two
--- "two"
---
---     'copy' should be understood together with 'effects' and is subject to the rules
---
--- > S.effects . S.copy       = id
--- > hoist S.effects . S.copy = id
---
---     The similar operations in 'Data.ByteString.Streaming' obey the same rules.
---
---     Where the actions you are contemplating are each simple folds over
---     the elements, or a selection of elements, then the coupling of the
---     folds is often more straightforwardly effected with `Control.Foldl`,
---     e.g.
---
--- >>> L.purely S.fold (liftA2 (,) L.sum L.product) $ each [1..10]
--- (55,3628800) :> ()
---
---     rather than
---
--- >>> S.sum $ S.product . S.copy $ each [1..10]
--- 55 :> (3628800 :> ())
---
---     A @Control.Foldl@ fold can be altered to act on a selection of elements by
---     using 'Control.Foldl.handles' on an appropriate lens. Some such
---     manipulations are simpler and more 'Data.List'-like, using 'copy':
---
--- >>> L.purely S.fold (liftA2 (,) (L.handles (filtered odd) L.sum) (L.handles (filtered even) L.product)) $ each [1..10]
--- (25,3840) :> ()
---
---      becomes
---
--- >>> S.sum $ S.filter odd $ S.product $ S.filter even $ S.copy $ each [1..10]
--- 25 :> (3840 :> ())
---
---     or using 'store'
---
--- >>> S.sum $ S.filter odd $ S.store (S.product . S.filter even) $ each [1..10]
--- 25 :> (3840 :> ())
---
---     But anything that fold of a @Stream (Of a) m r@ into e.g. an @m (Of b r)@
---     that has a constraint on @m@ that is carried over into @Stream f m@ -
---     e.g. @Monad@, @MonadIO@, @MonadResource@, etc. can be used on the stream.
---     Thus, I can fold over different groupings of the original stream:
---
--- >>>  (S.toList . mapped S.toList . chunksOf 5) $  (S.toList . mapped S.toList . chunksOf 3) $ S.copy $ each [1..10]
--- [[1,2,3,4,5],[6,7,8,9,10]] :> ([[1,2,3],[4,5,6],[7,8,9],[10]] :> ())
---
---     The procedure can be iterated as one pleases, as one can see from this (otherwise unadvisable!) example:
---
--- >>>  (S.toList . mapped S.toList . chunksOf 4) $ (S.toList . mapped S.toList . chunksOf 3) $ S.copy $ (S.toList . mapped S.toList . chunksOf 2) $ S.copy $ each [1..12]
--- [[1,2,3,4],[5,6,7,8],[9,10,11,12]] :> ([[1,2,3],[4,5,6],[7,8,9],[10,11,12]] :> ([[1,2],[3,4],[5,6],[7,8],[9,10],[11,12]] :> ()))
---
--- -}
--- copy
---   :: Monad m =>
---      Stream (Of a) m r -> Stream (Of a) (Stream (Of a) m) r
--- copy = Effect . return . loop where
---   loop str = case str of
---     Return r         -> Return r
---     Effect m         -> Effect (liftM loop (lift m))
---     Step (a :> rest) -> Effect (Step (a :> Return (Step (a :> loop rest))))
--- {-#INLINABLE copy#-}
---
--- duplicate
---   :: Monad m =>
---      Stream (Of a) m r -> Stream (Of a) (Stream (Of a) m) r
--- duplicate = copy
--- {-#INLINE duplicate #-}
---
+{-| Store the result of any suitable fold over a stream, keeping the stream for
+    further manipulation. @store f = f . copy@ :
+
+>>> S.print $ S.store S.product $ each [1..4]
+1
+2
+3
+4
+24 :> ()
+
+>>> S.print $ S.store S.sum $ S.store S.product $ each [1..4]
+1
+2
+3
+4
+10 :> (24 :> ())
+
+   Here the sum (10) and the product (24) have been \'stored\' for use when
+   finally we have traversed the stream with 'print' . Needless to say,
+   a second 'pass' is excluded conceptually, so the
+   folds that you apply successively with @store@ are performed
+   simultaneously, and in constant memory -- as they would be if,
+   say, you linked them together with @Control.Fold@:
+
+>>> L.impurely S.foldM (liftA3 (\a b c -> (b,c)) (L.sink print) (L.generalize L.sum) (L.generalize L.product)) $ each [1..4]
+1
+2
+3
+4
+(10,24) :> ()
+
+   Fusing folds after the fashion of @Control.Foldl@ will generally be a bit faster
+   than the corresponding succession of uses of 'store', but by
+   constant factor that will be completely dwarfed when any IO is at issue.
+
+   But 'store' / 'copy' is /much/ more powerful, as you can see by reflecting on
+   uses like this:
+
+>>> S.sum $ S.store (S.sum . mapped S.product . chunksOf 2) $ S.store (S.product . mapped S.sum . chunksOf 2 )$ each [1..6]
+21 :> (44 :> (231 :> ()))
+
+   It will be clear that this cannot be reproduced with any combination of lenses,
+   @Control.Fold@ folds, or the like.  (See also the discussion of 'copy'.)
+
+   It would conceivable be clearer to import a series of specializations of 'store'.
+   It is intended to be used at types like these:
+
+> storeM ::  (forall s m . Monad m => Stream (Of a) m s -> m (Of b s))
+>         -> (Monad n => Stream (Of a) n r -> Stream (Of a) n (Of b r))
+> storeM = store
+>
+> storeMIO :: (forall s m . MonadIO m => Stream (Of a) m s -> m (Of b s))
+>          -> ( MonadIO n => Stream (Of a) n r -> Stream (Of a) n (Of b r)
+> storeMIO = store
+
+    It is clear from these types that we are just using the general instances:
+
+> instance (Functor f, Monad m )  => Monad (Stream f m)
+> instance (Functor f, MonadIO m) => MonadIO (Stream f m)
+
+    We thus can't be touching the elements of the stream, or the final return value.
+    It is the same with other constraints that @Stream (Of a)@ inherits from the underlying monad,
+    like 'MonadResource'.  Thus I can independently filter and write to one file, but
+    nub and write to another, or interact with a database and a logfile and the like:
+
+>>> runResourceT $ (S.writeFile "hello2.txt" . S.nub) $ store (S.writeFile "hello.txt" . S.filter (/= "world")) $ each ["hello", "world", "goodbye", "world"]
+>>> :! cat hello.txt
+hello
+goodbye
+>>> :! cat hello2.txt
+hello
+world
+goodbye
+
+
+-}
+store :: LMonad m
+      => (Stream (LOf a) (Stream (LOf a) m) r ⊸ t) -> Stream (LOf a) m r ⊸ t
+store f x = f (copy x)
+{-#INLINE store #-}
+
+
+{-| Duplicate the content of stream, so that it can be acted on twice in different ways,
+    but without breaking streaming. Thus, with @each [1,2]@ I might do:
+
+>>> S.print $ each ["one","two"]
+"one"
+"two"
+>>> S.stdoutLn $ each ["one","two"]
+one
+two
+
+    With copy, I can do these simultaneously:
+
+>>> S.print $ S.stdoutLn $ S.copy $ each ["one","two"]
+one
+"one"
+two
+"two"
+
+    'copy' should be understood together with 'effects' and is subject to the rules
+
+> S.effects . S.copy       = id
+> hoist S.effects . S.copy = id
+
+    The similar operations in 'Data.ByteString.Streaming' obey the same rules.
+
+    Where the actions you are contemplating are each simple folds over
+    the elements, or a selection of elements, then the coupling of the
+    folds is often more straightforwardly effected with `Control.Foldl`,
+    e.g.
+
+>>> L.purely S.fold (liftA2 (,) L.sum L.product) $ each [1..10]
+(55,3628800) :> ()
+
+    rather than
+
+>>> S.sum $ S.product . S.copy $ each [1..10]
+55 :> (3628800 :> ())
+
+    A @Control.Foldl@ fold can be altered to act on a selection of elements by
+    using 'Control.Foldl.handles' on an appropriate lens. Some such
+    manipulations are simpler and more 'Data.List'-like, using 'copy':
+
+>>> L.purely S.fold (liftA2 (,) (L.handles (filtered odd) L.sum) (L.handles (filtered even) L.product)) $ each [1..10]
+(25,3840) :> ()
+
+     becomes
+
+>>> S.sum $ S.filter odd $ S.product $ S.filter even $ S.copy $ each [1..10]
+25 :> (3840 :> ())
+
+    or using 'store'
+
+>>> S.sum $ S.filter odd $ S.store (S.product . S.filter even) $ each [1..10]
+25 :> (3840 :> ())
+
+    But anything that fold of a @Stream (Of a) m r@ into e.g. an @m (Of b r)@
+    that has a constraint on @m@ that is carried over into @Stream f m@ -
+    e.g. @Monad@, @MonadIO@, @MonadResource@, etc. can be used on the stream.
+    Thus, I can fold over different groupings of the original stream:
+
+>>>  (S.toList . mapped S.toList . chunksOf 5) $  (S.toList . mapped S.toList . chunksOf 3) $ S.copy $ each [1..10]
+[[1,2,3,4,5],[6,7,8,9,10]] :> ([[1,2,3],[4,5,6],[7,8,9],[10]] :> ())
+
+    The procedure can be iterated as one pleases, as one can see from this (otherwise unadvisable!) example:
+
+>>>  (S.toList . mapped S.toList . chunksOf 4) $ (S.toList . mapped S.toList . chunksOf 3) $ S.copy $ (S.toList . mapped S.toList . chunksOf 2) $ S.copy $ each [1..12]
+[[1,2,3,4],[5,6,7,8],[9,10,11,12]] :> ([[1,2,3],[4,5,6],[7,8,9],[10,11,12]] :> ([[1,2],[3,4],[5,6],[7,8],[9,10],[11,12]] :> ()))
+
+-}
+copy :: forall a m r. LMonad m
+     => Stream (LOf a) m r ⊸ Stream (LOf a) (Stream (LOf a) m) r
+copy = Effect . return . loop where
+  loop :: Stream (LOf a) m r ⊸ Stream (LOf a) (Stream (LOf a) m) r
+  loop (Return r) = Return r
+  loop (Effect m) = Effect $ fmap loop (lift m)
+  loop (Step (a :> rest)) = Effect $ Step $ a :> (Return $ Step $ a :> loop rest)
+{-#INLINABLE copy#-}
+
+duplicate :: LMonad m
+          => Stream (LOf a) m r -> Stream (LOf a) (Stream (LOf a) m) r
+duplicate = copy
+{-#INLINE duplicate #-}
+
 -- {-| The type
 --
 -- > Data.List.unzip     :: [(a,b)] -> ([a],[b])
