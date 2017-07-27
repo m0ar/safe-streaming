@@ -2698,40 +2698,39 @@ unzip (Step ((a,b):> rest)) = Step $ a :> (Effect $ Step $ b :> Return (unzip re
 {-#INLINABLE unzip #-}
 
 
--- {- $maybes
---     These functions discard the 'Nothing's that they encounter. They are analogous
---     to the functions from @Data.Maybe@ that share their names.
--- -}
---
--- {-| The 'catMaybes' function takes a 'Stream' of 'Maybe's and returns
---     a 'Stream' of all of the 'Just' values. 'concat' has the same behavior,
---     but is more general; it works for any foldable container type.
--- -}
--- catMaybes :: Monad m => Stream (Of (Maybe a)) m r -> Stream (Of a) m r
--- catMaybes = loop where
---   loop stream = case stream of
---     Return r -> Return r
---     Effect m -> Effect (liftM loop m)
---     Step (ma :> snext) -> case ma of
---       Nothing -> loop snext
---       Just a -> Step (a :> loop snext)
--- {-#INLINABLE catMaybes #-}
---
--- {-| The 'mapMaybe' function is a version of 'map' which can throw out elements. In particular,
---     the functional argument returns something of type @'Maybe' b@. If this is 'Nothing', no element
---     is added on to the result 'Stream'. If it is @'Just' b@, then @b@ is included in the result 'Stream'.
---
--- -}
--- mapMaybe :: Monad m => (a -> Maybe b) -> Stream (Of a) m r -> Stream (Of b) m r
--- mapMaybe phi = loop where
---   loop stream = case stream of
---     Return r -> Return r
---     Effect m -> Effect (liftM loop m)
---     Step (a :> snext) -> case phi a of
---       Nothing -> loop snext
---       Just b -> Step (b :> loop snext)
--- {-#INLINABLE mapMaybe #-}
---
+{- $maybes
+    These functions discard the 'Nothing's that they encounter. They are analogous
+    to the functions from @Data.Maybe@ that share their names.
+-}
+
+{-| The 'catMaybes' function takes a 'Stream' of 'Maybe's and returns
+    a 'Stream' of all of the 'Just' values. 'concat' has the same behavior,
+    but is more general; it works for any foldable container type.
+-}
+catMaybes :: LMonad m => Stream (LOf (Maybe a)) m r ⊸ Stream (LOf a) m r
+catMaybes (Return r) = Return r
+catMaybes (Effect m) = Effect $ fmap catMaybes m
+catMaybes (Step (ma :> snext)) = case ma of
+  Nothing -> catMaybes snext
+  Just a  -> Step $ a :> catMaybes snext
+{-#INLINABLE catMaybes #-}
+
+{-| The 'mapMaybe' function is a version of 'map' which can throw out elements. In particular,
+    the functional argument returns something of type @'Maybe' b@. If this is 'Nothing', no element
+    is added on to the result 'Stream'. If it is @'Just' b@, then @b@ is included in the result 'Stream'.
+
+-}
+mapMaybe :: forall a b m r. LMonad m
+         => (a -> Maybe b) -> Stream (LOf a) m r ⊸ Stream (LOf b) m r
+mapMaybe phi = loop where
+  loop :: Stream (LOf a) m r ⊸ Stream (LOf b) m r
+  loop (Return r) = Return r
+  loop (Effect m) = Effect $ fmap loop m
+  loop (Step (a :> snext)) = case phi a of
+    Nothing -> loop snext
+    Just b  -> Step $ b :> loop snext
+{-#INLINABLE mapMaybe #-}
+
 -- {-| 'slidingWindow' accumulates the first @n@ elements of a stream,
 --      update thereafter to form a sliding window of length @n@.
 --      It follows the behavior of the slidingWindow function in
