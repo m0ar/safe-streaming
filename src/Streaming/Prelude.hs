@@ -2731,37 +2731,37 @@ mapMaybe phi = loop where
     Just b  -> Step $ b :> loop snext
 {-#INLINABLE mapMaybe #-}
 
--- {-| 'slidingWindow' accumulates the first @n@ elements of a stream,
---      update thereafter to form a sliding window of length @n@.
---      It follows the behavior of the slidingWindow function in
---      <https://hackage.haskell.org/package/conduit-combinators-1.0.4/docs/Data-Conduit-Combinators.html#v:slidingWindow conduit-combinators>.
---
--- >>> S.print $ slidingWindow 4 $ S.each "123456"
--- fromList "1234"
--- fromList "2345"
--- fromList "3456"
---
--- -}
---
--- slidingWindow :: Monad m
---   => Int
---   -> Stream (Of a) m b
---   -> Stream (Of (Seq.Seq a)) m b
--- slidingWindow n = setup (max 1 n :: Int) mempty
---   where
---     window !sequ str = do
---       e <- lift (next str)
---       case e of
---         Left r -> return r
---         Right (a,rest) -> do
---           yield (sequ Seq.|> a)
---           window (Seq.drop 1 sequ Seq.|> a) rest
---     setup 0 !sequ str = do
---        yield sequ
---        window (Seq.drop 1 sequ) str
---     setup n sequ str = do
---       e <- lift $ next str
---       case e of
---         Left r ->  yield sequ >> return r
---         Right (x,rest) -> setup (n-1) (sequ Seq.|> x) rest
--- {-#INLINABLE slidingWindow #-}
+{-| 'slidingWindow' accumulates the first @n@ elements of a stream,
+     update thereafter to form a sliding window of length @n@.
+     It follows the behavior of the slidingWindow function in
+     <https://hackage.haskell.org/package/conduit-combinators-1.0.4/docs/Data-Conduit-Combinators.html#v:slidingWindow conduit-combinators>.
+
+>>> S.print $ slidingWindow 4 $ S.each "123456"
+fromList "1234"
+fromList "2345"
+fromList "3456"
+
+-}
+slidingWindow :: forall a b m r. LMonad m
+              => Int -> Stream (LOf a) m b
+              ⊸ Stream (LOf (Seq.Seq a)) m b
+slidingWindow n = setup (max 1 n :: Int) mempty
+  where
+    window :: Seq.Seq a -> Stream (LOf a) m b ⊸ Stream (LOf (Seq.Seq a)) m b
+    window !sequ str = do
+      e <- lift (next str)
+      case e of
+        Left r -> return r
+        Right (a,rest) -> do
+          yield (sequ Seq.|> a)
+          window (Seq.drop 1 sequ Seq.|> a) rest
+    setup :: Int -> Seq.Seq a -> Stream (LOf a) m b ⊸ Stream (LOf (Seq.Seq a)) m b
+    setup 0 !sequ str = do
+       yield sequ
+       window (Seq.drop 1 sequ) str
+    setup n sequ str = do
+      e <- lift $ next str
+      case e of
+        Left r -> yield sequ >> return r
+        Right (x,rest) -> setup (n-1) (sequ Seq.|> x) rest
+{-#INLINABLE slidingWindow #-}
