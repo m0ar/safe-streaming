@@ -257,7 +257,7 @@ import Prelude hiding (map, mapM, mapM_, filter, drop, dropWhile, take, mconcat
                       , print, zipWith, zip, zipWith3, zip3, unzip, seq, show, read
                       , readLn, sequence, concat, span, break, readFile, writeFile
                       , minimum, maximum, elem, notElem, intersperse, all, any, head
-                      , last, fmap, (>>=), (>>), return, (<$>))
+                      , last, fmap, (>>=), (>>), return, (<$>), (<$))
 
 import qualified GHC.IO.Exception as G
 import qualified System.IO as IO
@@ -1828,58 +1828,64 @@ span pred = loop where
 {-# INLINABLE span #-}
 
 
--- {-| Split a stream of elements wherever a given element arises.
---     The action is like that of 'Prelude.words'.
---
--- >>> S.stdoutLn $ mapped S.toList $ S.split ' ' $ each "hello world  "
--- hello
--- world
---
--- -}
---
--- split :: (Eq a, Monad m) =>
---       a -> Stream (Of a) m r -> Stream (Stream (Of a) m) m r
--- split t  = loop  where
---   loop stream = case stream of
---     Return r -> Return r
---     Effect m -> Effect (liftM loop m)
---     Step (a :> rest) ->
---          if a /= t
---             then Step (fmap loop (yield a >> break (== t) rest))
---             else loop rest
--- {-#INLINABLE split #-}
---
--- {-| Split a succession of layers after some number, returning a streaming or
--- --   effectful pair. This function is the same as the 'splitsAt' exported by the
--- --   @Streaming@ module, but since this module is imported qualified, it can
--- --   usurp a Prelude name. It specializes to:
---
--- >  splitAt :: (Monad m, Functor f) => Int -> Stream (Of a) m r -> Stream (Of a) m (Stream (Of a) m r)
---
--- -}
--- splitAt :: (Monad m, Functor f) => Int -> Stream f m r -> Stream f m (Stream f m r)
--- splitAt = splitsAt
--- {-# INLINE splitAt #-}
---
--- -- -------
--- -- subst
--- -- -------
--- {-| Replace each element in a stream of individual values with a functorial
---     layer of any sort. @subst = flip with@ and is more convenient in
---     a sequence of compositions that transform a stream.
---
--- > with = flip subst
--- > for str f = concats $ subst f str
--- > subst f = maps (\(a:>r) -> r <$ f a)
--- > S.concat = concats . subst each
--- -}
--- subst :: (Monad m, Functor f) =>  (a -> f x) -> Stream (Of a) m r -> Stream f m r
--- subst f s = loop s where
---   loop str = case str of
---     Return r         -> Return r
---     Effect m         -> Effect (liftM loop m)
---     Step (a :> rest) -> Step (loop rest <$ f a)
+{-| Split a stream of elements wherever a given element arises.
+    The action is like that of 'Prelude.words'.
+
+>>> S.stdoutLn $ mapped S.toList $ S.split ' ' $ each "hello world  "
+hello
+world
+
+-}
+split :: forall a m r. (LMonad m, Eq a)
+      => a -> Stream (LOf a) m r ⊸ Stream (Stream (LOf a) m) m r
+split t  = loop  where
+  loop :: Stream (LOf a) m r ⊸ Stream (Stream (LOf a) m) m r
+  loop (Return r) = Return r
+  loop (Effect m) = Effect $ fmap loop m
+  loop (Step (a :> rest)) = case a /= t of
+    True  -> Step $ fmap loop (yield a >> break (== t) rest)
+    False -> loop rest
+{-#INLINABLE split #-}
+
+
+{-| Split a succession of layers after some number, returning a streaming or
+    effectful pair. This function is the same as the 'splitsAt' exported by the
+    @Streaming@ module, but since this module is imported qualified, it can
+    usurp a Prelude name. It specializes to:
+
+>  splitAt :: (Monad m, Functor f) => Int -> Stream (Of a) m r -> Stream (Of a) m (Stream (Of a) m r)
+
+-}
+splitAt :: (LMonad m, LFunctor f)
+        => Int -> Stream f m r ⊸ Stream f m (Stream f m r)
+splitAt = splitsAt
+{-# INLINE splitAt #-}
+
+
+-- -------
+-- subst
+-- -------
+-- Pah, this is particularly tricky, LFunctor restricts what we can do with
+-- the replacement.
+{-| Replace each element in a stream of individual values with a functorial
+    layer of any sort. @subst = flip with@ and is more convenient in
+    a sequence of compositions that transform a stream.
+
+> with = flip subst
+> for str f = concats $ subst f str
+> subst f = maps (\(a:>r) -> r <$ f a)
+> S.concat = concats . subst each
+-}
+-- subst :: forall a f m x r. (LMonad m, LFunctor f)
+      -- => (a -> f x) -> Stream (LOf a) m r ⊸ Stream f m r
+-- subst f = loop where
+  -- loop :: Stream (LOf a) m r ⊸ Stream f m r
+  -- loop (Return r) = Return r
+  -- loop (Effect m) = Effect $ fmap loop m
+  -- loop (Step (a :> rest)) = Step (loop rest <$ f a)
 -- {-#INLINABLE subst #-}
+
+
 -- -- ---------------
 -- -- take
 -- -- ---------------
