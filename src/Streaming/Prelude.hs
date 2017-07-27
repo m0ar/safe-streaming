@@ -250,6 +250,7 @@ import Data.Traversable (Traversable)
 import qualified Data.Foldable as Foldable
 import qualified Data.Sequence as Seq
 import Text.Read (readMaybe)
+import qualified Prelude as Prelude
 import Prelude hiding (map, mapM, mapM_, filter, drop, dropWhile, take, mconcat
                       , sum, product, iterate, repeat, cycle, replicate, splitAt
                       , takeWhile, enumFrom, enumFromTo, enumFromThen, length
@@ -1745,70 +1746,69 @@ scanned step begin done = loop Nothing begin
 --     map ((/1000000000) . nice utc) (repeatM getCurrentTime)
 --    where
 --      nice u u' = fromIntegral $ truncate (1000000000 * diffUTCTime u' u)
---
--- -- ---------------
--- -- sequence
--- -- ---------------
---
--- {-| Like the 'Data.List.sequence' but streaming. The result type is a
---     stream of a\'s, /but is not accumulated/; the effects of the elements
---     of the original stream are interleaved in the resulting stream. Compare:
---
--- > sequence :: Monad m =>       [m a]           -> m [a]
--- > sequence :: Monad m => Stream (Of (m a)) m r -> Stream (Of a) m r
---
---    This obeys the rule
---
--- -}
--- sequence :: Monad m => Stream (Of (m a)) m r -> Stream (Of a) m r
--- sequence = loop where
---   loop stream = case stream of
---     Return r          -> Return r
---     Effect m           -> Effect $ liftM loop m
---     Step (ma :> rest) -> Effect $ do
---       a <- ma
---       return (Step (a :> loop rest))
--- {-# INLINABLE sequence #-}
---
--- -- ---------------
--- -- show
--- -- ---------------
---
--- show :: (Monad m, Show a) => Stream (Of a) m r -> Stream (Of String) m r
--- show = map Prelude.show
--- {-# INLINE show #-}
--- -- ---------------
--- -- sum
--- -- ---------------
---
--- -- | Fold a 'Stream' of numbers into their sum
--- sum_ :: (Monad m, Num a) => Stream (Of a) m () -> m a
--- sum_ = fold_ (+) 0 id
--- {-# INLINE sum_ #-}
---
--- {-| Fold a 'Stream' of numbers into their sum with the return value
---
--- >  mapped S.sum :: Stream (Stream (Of Int)) m r -> Stream (Of Int) m r
---
---
--- >>> S.sum $ each [1..10]
--- 55 :> ()
---
--- >>> (n :> rest)  <- S.sum $ S.splitAt 3 $ each [1..10]
--- >>> print n
--- 6
--- >>> (m :> rest') <- S.sum $ S.splitAt 3 rest
--- >>> print m
--- 15
--- >>> S.print rest'
--- 7
--- 8
--- 9
---
--- -}
--- sum :: (Monad m, Num a) => Stream (Of a) m r -> m (Of a r)
--- sum = fold (+) 0 id
--- {-# INLINABLE sum #-}
+
+-- ---------------
+-- sequence
+-- ---------------
+
+{-| Like the 'Data.List.sequence' but streaming. The result type is a
+    stream of a\'s, /but is not accumulated/; the effects of the elements
+    of the original stream are interleaved in the resulting stream. Compare:
+
+> sequence :: Monad m =>       [m a]           -> m [a]
+> sequence :: Monad m => Stream (Of (m a)) m r -> Stream (Of a) m r
+
+   This obeys the rule
+
+-}
+sequence :: LMonad m => Stream (LOf (m a)) m r -> Stream (LOf a) m r
+sequence (Return r) = Return r
+sequence (Effect m) = Effect $ fmap sequence m
+sequence (Step (ma :> rest)) = Effect $ do
+  a <- ma
+  return $ Step $ a :> sequence rest
+{-# INLINABLE sequence #-}
+
+
+-- | Show a stream by mapping Show on all values
+show :: (LMonad m, Show a) => Stream (LOf a) m r -> Stream (LOf String) m r
+show = map Prelude.show
+{-# INLINE show #-}
+
+
+-- ---------------
+-- sum
+-- ---------------
+
+-- | Fold a 'Stream' of numbers into their sum
+sum_ :: (LMonad m, Num a) => Stream (LOf a) m () ⊸ m a
+sum_ = fold_ (+) 0 id
+{-# INLINE sum_ #-}
+
+{-| Fold a 'Stream' of numbers into their sum with the return value
+
+>  mapped S.sum :: Stream (Stream (Of Int)) m r -> Stream (Of Int) m r
+
+
+>>> S.sum $ each [1..10]
+55 :> ()
+
+>>> (n :> rest)  <- S.sum $ S.splitAt 3 $ each [1..10]
+>>> print n
+6
+>>> (m :> rest') <- S.sum $ S.splitAt 3 rest
+>>> print m
+15
+>>> S.print rest'
+7
+8
+9
+
+-}
+sum :: (LMonad m, Num a) => Stream (LOf a) m r ⊸ m (LOf a r)
+sum = fold (+) 0 id
+{-# INLINABLE sum #-}
+
 
 -- ---------------
 -- span
