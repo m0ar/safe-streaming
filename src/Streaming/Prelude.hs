@@ -1995,11 +1995,6 @@ toList = fold (\diff a ls -> diff (a: ls)) id (\diff -> diff [])
 {-# INLINE toList #-}
 
 
--- -- ---------------------------------------
--- -- with
--- -- ---------------------------------------
---
--- {-| Replace each element in a stream of individual Haskell values (a @Stream (Of a) m r@) with an associated 'functorial' step.
 {-| Inspect the first item in a stream of elements, without a return value.
     @uncons@ provides convenient exit into another streaming type:
 
@@ -2065,26 +2060,32 @@ untilRight act = Effect loop where
 {-#INLINABLE untilRight #-}
 
 
+-- ---------------------------------------
+-- with
+-- ---------------------------------------
+-- Particularly tricky, see note on subst.
+{-| Replace each element in a stream of individual Haskell values (a @Stream (Of a) m r@) with an associated 'functorial' step.
+
+> for str f  = concats (with str f)
+> with str f = for str (yields . f)
+> with str f = maps (\(a:>r) -> r <$ f a) str
+> with = flip subst
+> subst = flip with
+
+>>> with (each [1..3]) (yield . show) & intercalates (yield "--") & S.stdoutLn
+1
 --
--- > for str f  = concats (with str f)
--- > with str f = for str (yields . f)
--- > with str f = maps (\(a:>r) -> r <$ f a) str
--- > with = flip subst
--- > subst = flip with
+2
 --
--- >>> with (each [1..3]) (yield . show) & intercalates (yield "--") & S.stdoutLn
--- 1
--- --
--- 2
--- --
--- 3
---  -}
--- with :: (Monad m, Functor f) => Stream (Of a) m r -> (a -> f x) -> Stream f m r
+3
+-}
+-- with :: (LMonad m, LFunctor f)
+     -- => Stream (LOf ()) m r ⊸ (() -> f x) -> Stream f m r
 -- with s f = loop s where
---   loop str = case str of
---     Return r         -> Return r
---     Effect m         -> Effect (liftM loop m)
---     Step (a :> rest) -> Step (loop rest <$ f a)
+  -- loop :: Stream (LOf ()) m r ⊸ Stream f m r
+  -- loop (Return r) = Return r
+  -- loop (Effect m) = Effect $ fmap loop m
+  -- loop (Step (() :> rest)) = Step $ loop rest <$ f ()
 -- {-#INLINABLE with #-}
 
 -- ---------------------------------------
