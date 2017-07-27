@@ -2116,6 +2116,11 @@ yield :: LMonad m => a -> Stream (LOf a) m ()
 yield a = Step $ a :> Return ()
 {-# INLINE yield #-}
 
+
+-- Everything zip needs carefeul design consideration, since the original
+-- semantics throws stream ends away. These need to be kept, as well as the
+-- end of the potentially longer stream. This probably inhibits usability to a
+-- large extent...
 -- -- | Zip two 'Streams's
 -- zip :: Monad m
 --     => (Stream (Of a) m r)
