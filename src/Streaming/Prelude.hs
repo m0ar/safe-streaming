@@ -264,6 +264,7 @@ import Foreign.C.Error (Errno(Errno), ePIPE)
 import Control.Exception (throwIO, try)
 import Data.Monoid (Monoid (mappend, mempty))
 import Data.String (IsString (..))
+import Data.Maybe (Maybe(..))
 import Control.Concurrent (threadDelay)
 import Data.Time (getCurrentTime, diffUTCTime, picosecondsToDiffTime)
 import Data.Functor.Classes
@@ -1670,43 +1671,41 @@ scanM step begin done str = Effect $ do
       return $ Step $ b :> loop x' rest
 {-# INLINABLE scanM #-}
 
--- {- Label each element in a stream with a value accumulated according to a fold.
---
---
--- >>> S.print $ S.scanned (*) 1 id $ S.each [100,200,300]
--- (100,100)
--- (200,20000)
--- (300,6000000)
---
--- >>> S.print $ L.purely S.scanned L.product $ S.each [100,200,300]
--- (100,100)
--- (200,20000)
--- (300,6000000)
---
--- -}
---
--- data Maybe' a = Just' a | Nothing'
---
--- scanned :: Monad m => (x -> a -> x) -> x -> (x -> b) -> Stream (Of a) m r -> Stream (Of (a,b)) m r
--- scanned step begin done = loop Nothing' begin
---   where
---     loop !m !x stream = do
---       case stream of
---         Return r -> return r
---         Effect mn  -> Effect $ liftM (loop m x) mn
---         Step (a :> rest) -> do
---           case m of
---             Nothing' -> do
---               let !acc = step x a
---               yield (a, done acc)
---               loop (Just' a) acc rest
---             Just' _ -> do
---               let !acc = done (step x a)
---               yield (a, acc)
---               loop (Just' a) (step x a) rest
--- {-# INLINABLE scanned #-}
---
---
+{- Label each element in a stream with a value accumulated according to a fold.
+
+
+>>> S.print $ S.scanned (*) 1 id $ S.each [100,200,300]
+(100,100)
+(200,20000)
+(300,6000000)
+
+>>> S.print $ L.purely S.scanned L.product $ S.each [100,200,300]
+(100,100)
+(200,20000)
+(300,6000000)
+
+-}
+scanned :: forall a b m x r. LMonad m
+        => (x -> a -> x) -> x -> (x -> b)
+        -> Stream (LOf a) m r ⊸ Stream (LOf (a,b)) m r
+scanned step begin done = loop Nothing begin
+  where
+    loop :: Maybe a -> x -> Stream (LOf a) m r ⊸ Stream (LOf (a,b)) m r
+    loop !m !x (Return  r) = return r
+    loop !m !x (Effect mn) = Effect $ fmap (loop m x) mn
+    loop !m !x (Step (a :> rest)) = do
+      case m of
+        Nothing -> do
+          let !acc = step x a
+          yield (a, done acc)
+          loop (Just a) acc rest
+        Just _ -> do
+          let !acc = done (step x a)
+          yield (a, acc)
+          loop (Just a) (step x a) rest
+{-# INLINABLE scanned #-}
+
+
 -- {-| Streams the number of seconds from the beginning of action
 --
 --     Thus, to mark times of user input we might write something like:
