@@ -20,7 +20,7 @@ class LFunctor f where
 
 ($>) :: LFunctor f => f () ⊸ a ⊸ f a
 ($>) = flip (<$)
- 
+
 infixl 4 $>
 infixl 4 <$
 infixl 4 <$>
@@ -34,3 +34,6 @@ instance (LFunctor f, LFunctor g) => LFunctor (Sum f g) where
 
 instance LFunctor Identity where
   fmap f (Identity a) = Identity $ f a
+
+instance LFunctor ((,) s) where
+  fmap f (a, b) = (a, f b)
