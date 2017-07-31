@@ -1,5 +1,4 @@
 {-# LANGUAGE Trustworthy #-}
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE RebindableSyntax #-}
 
 module Control.Monad.LMonad (
@@ -10,6 +9,7 @@ module Control.Monad.LMonad (
 ) where
 
 import Control.Applicative.LApplicative (LApplicative(), pure)
+import Prelude (error)
 import GHC.Base (String())
 import Data.Linear (id)
 import Data.Functor.Identity
@@ -27,6 +27,7 @@ class LApplicative m => LMonad m where
   return = pure
 
   fail :: String -> m a
+  fail = error
 
 join :: LMonad m => m (m a) ⊸ m a
 join x = x >>= id
