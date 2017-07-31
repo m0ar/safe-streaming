@@ -1,11 +1,14 @@
+{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE ExplicitForAll #-}
+{-# LANGUAGE RebindableSyntax #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Control.Monad.State.LState where
 
+import Data.Linear (($), (.))
 import Control.Monad.LMonad
 import Control.Applicative.LApplicative
 import Data.Functor.LFunctor
@@ -13,18 +16,45 @@ import Data.Functor.LFunctor
 -- | A linear state function on some state @s@.
 newtype LState s a = LState { runLState :: s ⊸ (s, a) }
 
+-- | This looks exactly like @runLState@, but record projections are not in
+-- general linear. Consider @data P a b = P { p1 :: a, p2 :: b }@, where @p1
+-- :: P a b ⊸ a@ which of course is illegal.
+--
+-- There is only support for fully linear records, so a projection in general
+-- will be considered unrestricted. One workaround is to define your explicity
+-- linear projections liks this.
+unrunLState :: LState s a ⊸ (s ⊸ (s, a))
+unrunLState (LState cont) = cont
+
+
 instance LFunctor (LState s) where
   fmap :: forall s a b. (a ⊸ b) ⊸ LState s a ⊸ LState s b
-  fmap f (LState cont) = LState $ \s -> apply $ cont s
+  fmap f (LState cont) = LState $ fmap f . cont
+  -- LFunctor instance for tuples maps over second component
+
+
+instance LApplicative (LState s) where
+  pure :: a ⊸ LState s a
+  pure x = LState $ \s -> (s, x)
+
+  (<*>) :: forall s a b. LState s (a ⊸ b) ⊸ LState s a ⊸ LState s b
+  (LState f) <*> (LState cont) = LState $ apply . f
     where
-      apply :: (s, a) ⊸ (s, b)
-      apply (newSt, a) = (newSt, f a)
+      apply :: (s, a ⊸ b) ⊸ (s, b)
+      apply (s', f') = f' <$> cont s'
 
---instance LApplicative (LState s) where
 
---instance LMonad (LState s) where
---  return :: a ⊸ LState s a
---  return x = LState $ \s -> (s, x)
+instance LMonad (LState s) where
+  (>>=) :: forall s a b. LState s a ⊸ (a ⊸ LState s b) ⊸ LState s b
+  LState cont >>= f = LState $ \s -> apply f (cont s)
+    where
+      apply :: (a ⊸ LState s b) ⊸ (s, a) ⊸ (s, b)
+      apply f' (s', a) = (unrunLState $ f' a) s'
+
+
+----------------------------------
+-- Different kinds of linear state
+----------------------------------
 
 -- | A fully linear type of state.
 --
