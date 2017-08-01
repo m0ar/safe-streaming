@@ -4,6 +4,7 @@
 module Data.Linear where
 
 import Prelude (Show(..), Eq(..))
+import Data.Bool(Bool(..), bool)
 
 id :: a ⊸ a
 id a = a
@@ -30,4 +31,9 @@ data Unrestricted a where
 getUnrestricted :: Unrestricted a ⊸ a
 getUnrestricted (Unrestricted a) = a
 
+-- | This is not linear, but since LMonad with friends rely on
+-- -XRebindableSyntax, the default ifThenElse goes out of scope and this is
+-- useful anyway.
+ifThenElse :: Bool -> a -> a -> a
+ifThenElse b x y = bool y x b
 
