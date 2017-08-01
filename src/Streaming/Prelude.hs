@@ -59,9 +59,9 @@ module Streaming.Prelude (
      -- $producers
      , yield
      , each
---     , stdinLn
---     , readLn
---     , fromHandle
+     , stdinLn
+     , readLn
+     , fromHandle
 --     , readFile
      , iterate
      , iterateM
@@ -239,9 +239,11 @@ import Control.Monad.LMonad
 import Data.Functor.LFunctor
 import Control.Applicative.LApplicative
 import Control.Monad.Trans.LClass
+import Control.Monad.IO.LClass
 
 import Data.Functor.Identity
 import Data.Functor.Sum
+import qualified System.IO as IO
 
 import qualified Data.Foldable as Foldable
 import qualified Data.Sequence as Seq
@@ -2167,82 +2169,85 @@ yield a = Step $ a :> Return ()
 -- zip3 = zipWith3 (,,)
 -- {-# INLINABLE zip3 #-}
 --
--- -- --------------
--- -- IO fripperies
--- -- --------------
---
--- {-| View standard input as a @Stream (Of String) m r@. By contrast, 'stdoutLn' renders a @Stream (Of String) m r@ to standard output. The names
---     follow @Pipes.Prelude@
---
--- >>> stdoutLn stdinLn
--- hello<Enter>
--- hello
--- world<Enter>
--- world
--- ^CInterrupted.
---
---
--- >>> stdoutLn $ S.map reverse stdinLn
--- hello<Enter>
--- olleh
--- world<Enter>
--- dlrow
--- ^CInterrupted.
---
--- -}
--- stdinLn :: MonadIO m => Stream (Of String) m ()
--- stdinLn = fromHandle IO.stdin
--- {-# INLINABLE stdinLn #-}
---
--- {-| Read values from 'IO.stdin', ignoring failed parses.
---
--- >>> :set -XTypeApplications
--- >>> S.sum $ S.take 2 (S.readLn @IO @Int)
--- 10<Enter>
--- 12<Enter>
--- 22 :> ()
---
--- >>> S.toList $ S.take 2 (S.readLn @IO @Int)
--- 10<Enter>
--- 1@#$%^&*\<Enter>
--- 12<Enter>
--- [10,12] :> ()
---
--- -}
---
--- readLn :: (MonadIO m, Read a) => Stream (Of a) m ()
--- readLn = loop where
---   loop = do
---     eof <- liftIO IO.isEOF
---     unless eof $ do
---       str <- liftIO getLine
---       case readMaybe str of
---         Nothing -> readLn
---         Just n  -> yield n >> loop
--- {-# INLINABLE readLn #-}
---
---
--- {-| Read 'String's from a 'IO.Handle' using 'IO.hGetLine'
---
---     Terminates on end of input
---
--- >>> IO.withFile "/usr/share/dict/words" IO.ReadMode $ S.stdoutLn . S.take 3 . S.drop 50000 .  S.fromHandle
--- deflagrator
--- deflate
--- deflation
---
--- -}
--- fromHandle :: MonadIO m => IO.Handle -> Stream (Of String) m ()
--- fromHandle h = go
---   where
---     go = do
---         eof <- liftIO $ IO.hIsEOF h
---         unless eof $ do
---             str <- liftIO $ IO.hGetLine h
---             yield str
---             go
--- {-# INLINABLE fromHandle #-}
---
+-- --------------
+-- IO fripperies
+-- --------------
+
+{-| View standard input as a @Stream (Of String) m r@. By contrast, 'stdoutLn' renders a @Stream (Of String) m r@ to standard output. The names
+    follow @Pipes.Prelude@
+
+>>> stdoutLn stdinLn
+hello<Enter>
+hello
+world<Enter>
+world
+^CInterrupted.
+
+
+>>> stdoutLn $ S.map reverse stdinLn
+hello<Enter>
+olleh
+world<Enter>
+dlrow
+^CInterrupted.
+
+-}
+stdinLn :: LMonadIO m => Stream (LOf String) m ()
+stdinLn = fromHandle IO.stdin
+{-# INLINABLE stdinLn #-}
+
+
+{-| Read values from 'IO.stdin', ignoring failed parses.
+
+>>> :set -XTypeApplications
+>>> S.sum $ S.take 2 (S.readLn @IO @Int)
+10<Enter>
+12<Enter>
+22 :> ()
+
+>>> S.toList $ S.take 2 (S.readLn @IO @Int)
+10<Enter>
+1@#$%^&*\<Enter>
+12<Enter>
+[10,12] :> ()
+
+-}
+readLn :: (LMonadIO m, Read a) => Stream (LOf a) m ()
+readLn = do
+    eof <- liftIO IO.isEOF
+    case eof of
+      True  -> return ()
+      False -> do
+        str <- liftIO getLine
+        case readMaybe str of
+          Nothing -> readLn
+          Just n  -> yield n >> readLn
+{-# INLINABLE readLn #-}
+
+
+{-| Read 'String's from a 'IO.Handle' using 'IO.hGetLine'
+
+    Terminates on end of input
+
+>>> IO.withFile "/usr/share/dict/words" IO.ReadMode $ S.stdoutLn . S.take 3 . S.drop 50000 .  S.fromHandle
+deflagrator
+deflate
+deflation
+
+-}
+fromHandle :: LMonadIO m => IO.Handle -> Stream (LOf String) m ()
+fromHandle h = go
+  where
+    go = do
+        eof <- liftIO $ IO.hIsEOF h
+        case eof of
+          True  -> return ()
+          False -> do
+            str <- liftIO $ IO.hGetLine h
+            yield str
+            go
+{-# INLINABLE fromHandle #-}
+
 -- {-| Write a succession of strings to a handle as separate lines.
 --
 -- >>> S.toHandle IO.stdout $ each (words "one two three")
