@@ -81,7 +81,7 @@ module Streaming.Internal (
 import Control.Monad.LMonad
 import Data.Functor.LFunctor
 import Control.Monad.Trans.LClass
-import Control.Monad.IO.Class
+import Control.Monad.IO.LClass
 import Control.Applicative.LApplicative
 import Control.Monad.Morph.LMorph
 import Data.Data ( Data, Typeable )
@@ -232,11 +232,11 @@ instance LFunctor f => LMFunctor (Stream f) where
 --      Effect  m -> phi m >>= loop
 --      Step   f -> Step (fmap loop f)
 --  {-# INLINABLE embed #-}
---
---instance (MonadIO m, Functor f) => MonadIO (Stream f m) where
---  liftIO = Effect . liftM Return . liftIO
---  {-# INLINE liftIO #-}
---
+
+instance (LMonadIO m, LFunctor f) => LMonadIO (Stream f m) where
+  liftIO = Effect . fmap Return . liftIO
+  {-# INLINE liftIO #-}
+
 --instance (MonadBase b m, Functor f) => MonadBase b (Stream f m) where
 --  liftBase  = effect . fmap return . liftBase
 --  {-#INLINE liftBase #-}
