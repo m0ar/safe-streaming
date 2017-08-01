@@ -1,5 +1,6 @@
 {-# LANGUAGE Trustworthy #-}
 {-# LANGUAGE RebindableSyntax #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Control.Monad.LMonad (
   LMonad,
@@ -14,7 +15,7 @@ import Prelude (error)
 import GHC.Base (String(), bindIO, returnIO)
 import GHC.IO (failIO)
 import Data.Linear (id, (.))
-import System.IO (IO(..))
+import System.IO (IO)
 import Data.Functor.Identity
 
 infixl 1 >>, >>=
@@ -55,7 +56,7 @@ instance LApplicative IO where
 
 instance LMonad IO where
   {-# INLINE (>>)#-}
-  {-# LNLINE (>>=) #-}
+  {-# INLINE (>>=) #-}
   return = returnIO
   (>>)   = (*>)
   (>>=) = bindIO
