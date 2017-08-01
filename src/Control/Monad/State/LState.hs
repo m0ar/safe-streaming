@@ -9,6 +9,8 @@
 module Control.Monad.State.LState where
 
 import Data.Linear (($), (.))
+import Data.Eq (Eq)
+import Text.Show (Show)
 import Control.Monad.LMonad
 import Control.Applicative.LApplicative
 import Data.Functor.LFunctor
@@ -61,6 +63,7 @@ instance LMonad (LState s) where
 -- Cannot be get (because @s ⊸ (s,s)@ will not pass the linearity check), but
 -- it can be modified freely.
 data LS a where LS :: a ⊸ LS a
+  deriving (Show, Eq)
 
 
 -- | An unrestricted type of state.
@@ -71,7 +74,7 @@ data LS a where LS :: a ⊸ LS a
 -- This makes it possible to have get return the state, since @s ⊸ (s,s)@ is
 -- otherwise unlawful.
 data S a where S :: a -> S a
-
+  deriving (Show, Eq)
 
 -- | A partially linear type of state.
 --
@@ -79,7 +82,7 @@ data S a where S :: a -> S a
 -- be treated linearly (and hence cannot be @get@), but the @b@ can be used
 -- freely.
 data PLS a b where PLS :: a ⊸ b -> PLS a b
-
+  deriving (Show, Eq)
 
 -- | Modify the state with some function.
 --
