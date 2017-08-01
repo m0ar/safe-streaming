@@ -8,10 +8,13 @@ module Control.Monad.LMonad (
   join, ap
 ) where
 
-import Control.Applicative.LApplicative (LApplicative(), pure)
+import Control.Applicative.LApplicative (LApplicative(..), pure, (*>))
+import Data.Functor.LFunctor
 import Prelude (error)
-import GHC.Base (String())
-import Data.Linear (id)
+import GHC.Base (String(), bindIO, returnIO)
+import GHC.IO (failIO)
+import Data.Linear (id, (.))
+import System.IO (IO(..))
 import Data.Functor.Identity
 
 infixl 1 >>, >>=
@@ -40,3 +43,21 @@ ap m1 m2 = do
 
 instance LMonad Identity where
   (Identity a) >>= k = k a
+
+
+-- LFunctor & LApplicative IO defined here to escape recursive imports
+instance LFunctor IO where
+  fmap f x = x >>= return . f
+
+instance LApplicative IO where
+  pure  = return
+  (<*>) = ap
+
+instance LMonad IO where
+  {-# INLINE (>>)#-}
+  {-# LNLINE (>>=) #-}
+  return = returnIO
+  (>>)   = (*>)
+  (>>=) = bindIO
+  fail  = failIO
+
