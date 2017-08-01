@@ -1112,7 +1112,7 @@ never =  let loop = Effect $ return $ Step $ pure loop in loop
 {-#INLINABLE never #-}
 
 
-delays :: (LMonad m, MonadIO m, LApplicative f) => Double -> Stream f m r
+delays :: (LMonadIO m, LFunctor f, LApplicative f) => Double -> Stream f m r
 delays seconds = loop where
   loop = Effect $ liftIO (threadDelay delay) >> return (Step (pure loop))
   delay = fromInteger (truncate (1000000 * seconds))
