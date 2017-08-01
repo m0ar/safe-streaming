@@ -28,7 +28,7 @@ unrunLState (LState cont) = cont
 
 
 instance LFunctor (LState s) where
-  fmap :: forall s a b. (a ⊸ b) ⊸ LState s a ⊸ LState s b
+  fmap :: forall a b. (a ⊸ b) ⊸ LState s a ⊸ LState s b
   fmap f (LState cont) = LState $ fmap f . cont
   -- LFunctor instance for tuples maps over second component
 
@@ -37,7 +37,7 @@ instance LApplicative (LState s) where
   pure :: a ⊸ LState s a
   pure x = LState $ \s -> (s, x)
 
-  (<*>) :: forall s a b. LState s (a ⊸ b) ⊸ LState s a ⊸ LState s b
+  (<*>) :: forall a b. LState s (a ⊸ b) ⊸ LState s a ⊸ LState s b
   (LState f) <*> (LState cont) = LState $ apply . f
     where
       apply :: (s, a ⊸ b) ⊸ (s, b)
@@ -45,7 +45,7 @@ instance LApplicative (LState s) where
 
 
 instance LMonad (LState s) where
-  (>>=) :: forall s a b. LState s a ⊸ (a ⊸ LState s b) ⊸ LState s b
+  (>>=) :: forall a b. LState s a ⊸ (a ⊸ LState s b) ⊸ LState s b
   LState cont >>= f = LState $ \s -> apply f (cont s)
     where
       apply :: (a ⊸ LState s b) ⊸ (s, a) ⊸ (s, b)
