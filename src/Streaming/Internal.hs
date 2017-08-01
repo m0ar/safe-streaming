@@ -1,7 +1,8 @@
 {-# LANGUAGE RankNTypes, StandaloneDeriving,DeriveDataTypeable, BangPatterns #-}
 {-# LANGUAGE UndecidableInstances, CPP, FlexibleInstances, MultiParamTypeClasses  #-}
-{-# LANGUAGE Trustworthy, ScopedTypeVariables, GADTs #-}
+{-# LANGUAGE ScopedTypeVariables, GADTs #-}
 {-# LANGUAGE RebindableSyntax, PartialTypeSignatures, InstanceSigs #-}
+{-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 module Streaming.Internal (
     -- * The free monad transformer
     -- $stream
@@ -81,28 +82,15 @@ import Control.Monad.LMonad
 import Data.Functor.LFunctor
 import Control.Monad.Trans.LClass
 import Control.Monad.IO.Class
-import Control.Monad.Reader.Class
-import Control.Monad.Writer.Class
-import Control.Monad.State.Class
-import Control.Monad.Error.Class
-import Control.Monad.Cont.Class
 import Control.Applicative.LApplicative
-import Data.Foldable ( Foldable(..) )
-import Data.Traversable
 import Control.Monad.Morph.LMorph
-import Data.Monoid (Monoid (..), (<>))
-import Data.Functor.Identity
 import Data.Data ( Data, Typeable )
 import Prelude hiding (splitAt, (>>), (>>=), return, fmap, fail, pure, (<$>))
 import Data.Functor.Compose
 import Data.Functor.Sum
 import Control.Concurrent (threadDelay)
-import Control.Monad.Base
-import Control.Monad.Trans.Resource
-import Control.Monad.Catch hiding (bracket, onException)
-import Control.Monad.Trans.Control
-import Data.IORef
 import Data.Linear (liftUnit)
+
 {- $stream
 
     The 'Stream' data type is equivalent to @FreeT@ and can represent any effectful
@@ -382,10 +370,10 @@ instance LFunctor f => LMFunctor (Stream f) where
 -}
 destroy :: (LFunctor f, LMonad m) =>
      Stream f m r ⊸ (f b ⊸ b) -> (m b ⊸ b) -> (r ⊸ b) ⊸  b
-destroy stream0 construct effect done = loop done stream0 where
+destroy stream0 construct eff done = loop done stream0 where
   loop :: (r ⊸ b) ⊸ Stream f m r ⊸ _
   loop endFn (Return r) = endFn r
-  loop endFn (Effect m) = effect $ fmap (loop endFn) m
+  loop endFn (Effect m) = eff $ fmap (loop endFn) m
   loop endFn (Step fs)  = construct $ fmap (loop endFn) fs
 {-# INLINABLE destroy #-}
 
@@ -419,7 +407,7 @@ destroy stream0 construct effect done = loop done stream0 where
 -}
 streamFold :: (LFunctor f, LMonad m)
            => (r ⊸ b) ⊸ (m b ⊸ b) -> (f b ⊸ b) -> Stream f m r ⊸ b
-streamFold done effect construct stream  = destroy stream construct effect done
+streamFold done eff construct stream  = destroy stream construct eff done
 {-#INLINE streamFold #-}
 
 {- | Reflect a church-encoded stream; cp. @GHC.Exts.build@
@@ -629,7 +617,7 @@ splitsAt :: forall f m r. (LMonad m, LFunctor f)
 splitsAt  = loop where
   loop :: Int -> Stream f m r ⊸ Stream f m (Stream f m r)
   loop !n stream | n <= 0 = Return stream
-  loop !n (Return r) = Return (Return r)
+  loop _ (Return r) = Return (Return r)
   loop !n (Effect m) = Effect $ fmap (loop n) m
   loop !n (Step  fs) = case n of
     0 -> Return $ Step fs
@@ -764,10 +752,10 @@ mapsMExposed phi = loop where
 
 destroyExposed :: forall f m r a. (LFunctor f, LMonad m)
                => Stream f m r ⊸ (f a ⊸ a) -> (m a ⊸ a) -> (r ⊸ a) -> a
-destroyExposed stream0 construct effect done = loop stream0 where
+destroyExposed stream0 construct eff done = loop stream0 where
   loop :: Stream f m r ⊸ a
   loop (Return r) = done r
-  loop (Effect m) = effect $ fmap loop m
+  loop (Effect m) = eff $ fmap loop m
   loop (Step  fs) = construct $ fmap loop fs
 {-# INLINABLE destroyExposed #-}
 

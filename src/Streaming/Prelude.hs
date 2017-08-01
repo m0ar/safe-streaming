@@ -48,148 +48,147 @@
 >
 -}
 {-# LANGUAGE RankNTypes, BangPatterns, DeriveDataTypeable, TypeFamilies,
-             DeriveFoldable, DeriveFunctor, DeriveTraversable, CPP, Trustworthy #-}
+             DeriveFoldable, DeriveFunctor, DeriveTraversable, CPP #-}
 {-# LANGUAGE ScopedTypeVariables, ExplicitForAll #-}
 {-# LANGUAGE RebindableSyntax #-}
 module Streaming.Prelude (
     -- * Types
      LOf (..)
---
---     -- * Introducing streams of elements
---     -- $producers
+
+     -- * Introducing streams of elements
+     -- $producers
      , yield
      , each
 --     , stdinLn
 --     , readLn
 --     , fromHandle
 --     , readFile
---     , iterate
---     , iterateM
---     , repeat
---     , repeatM
---     , replicate
---     , untilRight
---     , cycle
---     , replicateM
---     , enumFrom
---     , enumFromThen
+     , iterate
+     , iterateM
+     , repeat
+     , repeatM
+     , replicate
+     , untilRight
+     , cycle
+     , replicateM
+     , enumFrom
+     , enumFromThen
 --     , seconds
---     , unfoldr
---
---
---
---     -- * Consuming streams of elements
---     -- $consumers
+     , unfoldr
+
+
+
+    -- * Consuming streams of elements
+    -- $consumers
 --     , stdoutLn
 --     , stdoutLn'
---     , mapM_
+     , mapM_
 --     , print
 --     , toHandle
 --     , writeFile
      , effects
---     , erase
---     , drained
---
---
---     -- * Stream transformers
---     -- $pipes
+     , erase
+     , drained
+
+
+     -- * Stream transformers
+     -- $pipes
      , map
---     , mapM
---     , maps
---     , mapped
+     , mapM
+     , maps
+     , mapped
      , for
 --     , with
 --     , subst
---     , copy
---     , duplicate
---     , store
+     , copy
+     , duplicate
+     , store
      , chain
---     , sequence
+     , sequence
      , filter
---     , filterM
+     , filterM
 --     , delay
---     , intersperse
+     , intersperse
 --     , take
 --     , takeWhile
--- --    , takeWhile'
+--     , takeWhile'
 --     , takeWhileM
      , drop
---     , dropWhile
+     , dropWhile
      , concat
---     -- , elemIndices
---     -- , findIndices
---     , scan
---     , scanM
---     , scanned
---     , read
---     , show
---     , cons
---     , slidingWindow
---
---
---     -- * Splitting and inspecting streams of elements
+--     , elemIndices
+--     , findIndices
+     , scan
+     , scanM
+     , scanned
+     , read
+     , show
+     , cons
+     , slidingWindow
+
+
+     -- * Splitting and inspecting streams of elements
      , next
---     , uncons
---     , splitAt
---     , split
+     , uncons
+     , splitAt
+     , split
      , breaks
      , break
      , breakWhen
---     , span
---     , group
---     , groupBy
---  --   , groupedBy
---
---
---     -- * Sum and Compose manipulation
---
---     , distinguish
---     , switch
---     , separate
---     , unseparate
---     , eitherToSum
---     , sumToEither
---     , sumToCompose
---     , composeToSum
---
---     -- * Folds
---     -- $folds
+     , span
+     , group
+     , groupBy
+     , groupedBy
+
+
+    -- * Sum and Compose manipulation
+     , distinguish
+     , switch
+     , separate
+     , unseparate
+     , eitherToSum
+     , sumToEither
+     , sumToCompose
+     , composeToSum
+
+     -- * Folds
+     -- $folds
      , fold
-     , fold_
-     -- , foldM
-     -- , foldM_
+--     , fold_
+     , foldM
+--     , foldM_
      , all
 --     , all_
      , any
 --     , any_
---     , sum
---     , sum_
---     , product
---     , product_
---     , head
+     , sum
+     , sum_
+     , product
+     , product_
+     , head
 --     , head_
---     , last
+     , last
 --     , last_
---     , elem
+     ,elem
 --     , elem_
---     , notElem
+     , notElem
 --     , notElem_
---     , length
+     , length
 --     , length_
      , toList
      , toList_
---     , mconcat
+     , mconcat
 --     , mconcat_
---     , minimum
+     , minimum
 --     , minimum_
---     , maximum
+     , maximum
 --     , maximum_
---     , foldrM
---     , foldrT
---
---
---     -- , all
---     -- , any
+     , foldrM
+     , foldrT
+
+
+     -- , all
+     -- , any
 --     -- , and
 --     -- , or
 --     -- , elem
@@ -209,26 +208,26 @@ module Streaming.Prelude (
 --     , zipWith
 --     , zip3
 --     , zipWith3
---     , unzip
---     , partitionEithers
---     , partition
---
---     -- * Maybes
---     -- $maybes
---     , catMaybes
---     , mapMaybe
---
---     -- * Pair manipulation
---     , lazily
---     , strictly
+     , unzip
+     , partitionEithers
+     , partition
+
+     -- * Maybes
+     -- $maybes
+     , catMaybes
+     , mapMaybe
+
+     -- * Pair manipulation
+     , lazily
+     , strictly
 --     , fst'
---     , snd'
---     , mapOf
+     , snd'
+     , mapOf
 --     , _first
 --     , _second
 --
---     -- * Interoperation
---     , reread
+     -- * Interoperation
+     , reread
 
      -- * Basic Type
      , Stream
@@ -241,12 +240,9 @@ import Data.Functor.LFunctor
 import Control.Applicative.LApplicative
 import Control.Monad.Trans.LClass
 
-import Data.Data ( Data, Typeable )
 import Data.Functor.Identity
 import Data.Functor.Sum
 
-import Data.Foldable (Foldable)
-import Data.Traversable (Traversable)
 import qualified Data.Foldable as Foldable
 import qualified Data.Sequence as Seq
 import Text.Read (readMaybe)
@@ -256,23 +252,12 @@ import Prelude hiding (map, mapM, mapM_, filter, drop, dropWhile, take, mconcat
                       , takeWhile, enumFrom, enumFromTo, enumFromThen, length
                       , print, zipWith, zip, zipWith3, zip3, unzip, seq, show, read
                       , readLn, sequence, concat, span, break, readFile, writeFile
-                      , minimum, maximum, elem, notElem, intersperse, all, any, head
+                      , minimum, maximum, elem, notElem, all, any, head
                       , last, fmap, (>>=), (>>), return, (<$>), (<$))
 
-import qualified GHC.IO.Exception as G
-import qualified System.IO as IO
-import Foreign.C.Error (Errno(Errno), ePIPE)
-import Control.Exception (throwIO, try)
 import Data.Monoid (Monoid (mappend, mempty))
-import Data.String (IsString (..))
 import Data.Maybe (Maybe(..))
-import Control.Concurrent (threadDelay)
-import Data.Time (getCurrentTime, diffUTCTime, picosecondsToDiffTime)
-import Data.Functor.Classes
 import Data.Functor.Compose
-import Control.Monad.Trans.Resource
-
-import GHC.Magic
 import Data.Functor.LOf
 
 -- instance (Eq a) => Eq1 (Of a) where eq1 = (==)
@@ -343,7 +328,7 @@ strictly (a, b) = a :> b
 --fst' (a :> b) = a
 --{-#INLINE fst' #-}
 snd' :: LOf a b -> b
-snd' (a :> b) = b
+snd' (_ :> b) = b
 {-#INLINE snd' #-}
 
 {-| Map a function over the first element of an @Of@ pair
@@ -439,11 +424,11 @@ any thus = loop where
 break :: forall a m r. LMonad m
       => (a -> Bool) -> Stream (LOf a) m r
       ⊸ Stream (LOf a) m (Stream (LOf a) m r)
-break pred = loop where
+break p = loop where
   loop :: Stream (LOf a) m r ⊸ Stream (LOf a) m (Stream (LOf a) m r)
   loop (Return r) = Return $ Return r
   loop (Effect m) = Effect $ fmap loop m
-  loop (Step (a :> rest)) = case pred a of
+  loop (Step (a :> rest)) = case p a of
     True  -> Return $ Step (a :> rest)
     False -> Step $ a :> loop rest
 {-# INLINABLE break #-}
@@ -470,16 +455,16 @@ break pred = loop where
 breakWhen :: forall x a b m r. LMonad m
           => (x -> a -> x) -> x -> (x -> b) -> (b -> Bool)
           -> Stream (LOf a) m r ⊸ Stream (LOf a) m (Stream (LOf a) m r)
-breakWhen step begin done pred = loop0 begin
+breakWhen step begin done p = loop0 begin
   where
     loop0 :: x -> Stream (LOf a) m r ⊸ Stream (LOf a) m (Stream (LOf a) m r)
-    loop0 x (Return r) = return $ return r
+    loop0 _ (Return r) = return $ return r
     loop0 x (Effect m) = Effect $ fmap (loop0 x) m
     loop0 x (Step (a :> rest)) = loop a (step x a) rest
 
     loop :: a -> x -> Stream (LOf a) m r ⊸ Stream (LOf a) m (Stream (LOf a) m r)
-    loop a !x stream | pred (done x) = return $ yield a >> stream
-    loop a !x (Return r) = yield a >> return (return r)
+    loop a !x stream | p (done x) = return $ yield a >> stream
+    loop a _ (Return r) = yield a >> return (return r)
     loop a !x (Effect m) = Effect $ fmap (loop a x) m
     loop a !x (Step (a' :> rest)) = yield a >> loop a' (step x a') rest
 {-# INLINABLE breakWhen #-}
@@ -667,9 +652,9 @@ drop n str | n <= 0 = str
 drop n str = loop n str where
   loop :: Int -> Stream (LOf a) m r ⊸ Stream (LOf a) m r
   loop 0 stream = stream
-  loop n (Return r) = Return r
-  loop n (Effect m) = Effect $ fmap (loop n) m
-  loop n (Step (a :> as)) = loop (n-1) as
+  loop _ (Return r) = Return r
+  loop n' (Effect m) = Effect $ fmap (loop n') m
+  loop n' (Step (_ :> as)) = loop (n'-1) as
 {-# INLINABLE drop #-}
 
 -- ---------------
@@ -689,11 +674,11 @@ four<Enter>
 -}
 dropWhile :: forall a m r. LMonad m
           => (a -> Bool) -> Stream (LOf a) m r ⊸ Stream (LOf a) m r
-dropWhile pred = loop where
+dropWhile p = loop where
   loop :: Stream (LOf a) m r ⊸ Stream (LOf a) m r
   loop (Return r)  = Return r
   loop (Effect ma) = Effect $ fmap loop ma
-  loop (Step (a :> as)) = case pred a of
+  loop (Step (a :> as)) = case p a of
     True  -> loop as
     False -> Step $ a :> as
 {-# INLINABLE dropWhile #-}
@@ -820,7 +805,7 @@ enumFromThen first second = Streaming.Prelude.map toEnum (loop _first)
 erase :: LMonad m => Stream (LOf a) m r ⊸ Stream Identity m r
 erase (Return r) = Return r
 erase (Effect m) = Effect $ fmap erase m
-erase (Step (a :> rest)) = Step $ Identity $ erase rest
+erase (Step (_ :> rest)) = Step $ Identity $ erase rest
 {-# INLINABLE erase #-}
 
 -- ---------------
@@ -829,11 +814,11 @@ erase (Step (a :> rest)) = Step $ Identity $ erase rest
 
 -- | Skip elements of a stream that fail a predicate
 filter :: forall a m r. LMonad m => (a -> Bool) -> Stream (LOf a) m r ⊸ Stream (LOf a) m r
-filter pred = loop where
+filter p = loop where
   loop :: Stream (LOf a) m r ⊸ Stream (LOf a) m r
   loop (Return r) = Return r
   loop (Effect m) = Effect $ fmap loop m
-  loop (Step (a :> as)) = case pred a of
+  loop (Step (a :> as)) = case p a of
     True  -> Step $ a :> loop as
     False -> loop as
 {-# INLINE filter #-}  -- ~ 10% faster than INLINABLE in simple bench
@@ -846,12 +831,12 @@ filter pred = loop where
 -- | Skip elements of a stream that fail a monadic test
 filterM :: forall a m r. LMonad m
         => (a -> m Bool) -> Stream (LOf a) m r ⊸ Stream (LOf a) m r
-filterM pred = loop where
+filterM p = loop where
   loop :: Stream (LOf a) m r ⊸ Stream (LOf a) m r
   loop (Return r) = Return r
   loop (Effect m) = Effect $ fmap loop m
   loop (Step (a :> as)) = Effect $ do
-    bool <- pred a
+    bool <- p a
     case bool of
       True  -> return $ Step $ a :> loop as
       False -> return $ loop as
@@ -1064,7 +1049,7 @@ foldrM step = loop where
 
 -- | @for@ replaces each element of a stream with an associated stream. Note that the
 -- associated stream may layer any functor.
-for :: forall f a m r x. (LMonad m, LFunctor f)
+for :: forall f a m r. (LMonad m, LFunctor f)
     => Stream (LOf a) m r ⊸ (a -> Stream f m ()) -> Stream f m r
 for str0 act = loop str0 where
   loop :: Stream (LOf a) m r ⊸ Stream f m r
@@ -1087,19 +1072,19 @@ groupedBy equals = loop where
         e <- inspect stream
         return $ case e of
             Left   r -> Return r
-            Right s@(Compose (a :> p')) -> Step $
+            Right (Compose (a :> p')) -> Step $
                 fmap loop (Step $ Compose (a :> fmap (span' (equals a)) p'))
 
   span' :: (LMonad m, LFunctor f)
         => (a -> Bool) -> Stream (Compose (LOf a) f) m r
         ⊸ Stream (Compose (LOf a) f) m (Stream (Compose (LOf a) f) m r)
-  span' pred = loop where
-    loop :: Stream (Compose (LOf a) f) m r
+  span' p = loop' where
+    loop' :: Stream (Compose (LOf a) f) m r
          ⊸ Stream (Compose (LOf a) f) m (Stream (Compose (LOf a) f) m r)
-    loop (Return r) = Return $ Return r
-    loop (Effect m) = Effect $ fmap loop m
-    loop (Step (Compose (a :> rest))) = case pred a of
-      True  -> Step $ Compose $ a :> fmap loop rest
+    loop' (Return r) = Return $ Return r
+    loop' (Effect m) = Effect $ fmap loop' m
+    loop' (Step (Compose (a :> rest))) = case p a of
+      True  -> Step $ Compose $ a :> fmap loop' rest
       False -> Return $ Step $ Compose $ a :> rest
 {-# INLINABLE groupedBy #-}
 
@@ -1162,14 +1147,14 @@ head (Step (a :> rest)) = effects rest >>= \r -> return $ Just a :> r
 
 intersperse :: forall a m r. LMonad m
             => a -> Stream (LOf a) m r ⊸ Stream (LOf a) m r
-intersperse x (Return r) = Return r
+intersperse _ (Return r) = Return r
 intersperse x (Effect m) = Effect $ fmap (intersperse x) m
 intersperse x (Step (a :> rest)) = loop a rest
   where
     loop :: a -> Stream (LOf a) m r ⊸ Stream (LOf a) m r
-    loop !a (Return r) = Step $ a :> Return r
-    loop !a (Effect m) = Effect $ fmap (loop a) m
-    loop !a (Step (b :> rest)) = Step $ a :> Step (x :> loop b rest)
+    loop !a' (Return r) = Step $ a' :> Return r
+    loop !a' (Effect m) = Effect $ fmap (loop a') m
+    loop !a' (Step (b :> rest')) = Step $ a' :> Step (x :> loop b rest')
 {-#INLINABLE intersperse #-}
 
 
@@ -1204,7 +1189,7 @@ last = loop Nothing_ where
     Nothing_ -> return $ Nothing :> r
     Just_ a  -> return $ Just a :> r
   loop mb (Effect m) = m >>= loop mb
-  loop mb (Step (a :> rest)) = loop (Just_ a) rest
+  loop _ (Step (a :> rest)) = loop (Just_ a) rest
 {-#INLINABLE last #-}
 
 
@@ -1570,7 +1555,7 @@ repeatM ma = loop where
 
 -- | Repeat an element several times.
 replicate :: LMonad m => Int -> a -> Stream (LOf a) m ()
-replicate n a | n <= 0 = return ()
+replicate n _ | n <= 0 = return ()
 replicate n a = loop n where
   loop 0 = Return ()
   loop m = Effect $ return $ Step $ a :> loop (m-1)
@@ -1585,12 +1570,12 @@ replicate n a = loop n where
 
 -}
 replicateM :: LMonad m => Int -> m a -> Stream (LOf a) m ()
-replicateM n ma | n <= 0 = return ()
+replicateM n _ | n <= 0 = return ()
 replicateM n ma = loop n where
   loop 0 = Return ()
-  loop n = Effect $ do
+  loop n' = Effect $ do
     a <- ma
-    return $ Step $ a :> loop (n-1)
+    return $ Step $ a :> loop (n'-1)
 {-# INLINABLE replicateM #-}
 
 {-| Read an @IORef (Maybe a)@ or a similar device until it reads @Nothing@.
@@ -1634,7 +1619,7 @@ scan :: forall a b m x r. LMonad m
 scan step begin done str = Step (done begin :> loop begin str)
   where
     loop :: x -> Stream (LOf a) m r ⊸ Stream (LOf b) m r
-    loop !acc (Return r) = Return r
+    loop _ (Return r) = Return r
     loop !acc (Effect m) = Effect $ fmap (loop acc) m
     loop !acc (Step (a :> rest)) = let !acc' = step acc a
                                    in Step $ done acc' :> loop acc' rest
@@ -1662,7 +1647,7 @@ scanM step begin done str = Effect $ do
     return $ Step $ b :> loop x str
   where
     loop :: x -> Stream (LOf a) m r ⊸ Stream (LOf b) m r
-    loop !x (Return r) = Return r -- note we have already yielded from x
+    loop _ (Return r) = Return r -- note we have already yielded from x
     loop !x (Effect m) = Effect $ do
       stream' <- m
       return $ loop x stream'
@@ -1692,7 +1677,7 @@ scanned :: forall a b m x r. LMonad m
 scanned step begin done = loop Nothing begin
   where
     loop :: Maybe a -> x -> Stream (LOf a) m r ⊸ Stream (LOf (a,b)) m r
-    loop !m !x (Return  r) = return r
+    loop _ _ (Return  r) = return r
     loop !m !x (Effect mn) = Effect $ fmap (loop m x) mn
     loop !m !x (Step (a :> rest)) = do
       case m of
@@ -1818,11 +1803,11 @@ sum = fold (+) 0 id
 span :: forall a m r. LMonad m
      => (a -> Bool) -> Stream (LOf a) m r
      ⊸ Stream (LOf a) m (Stream (LOf a) m r)
-span pred = loop where
+span p = loop where
   loop :: Stream (LOf a) m r ⊸ Stream (LOf a) m (Stream (LOf a) m r)
   loop (Return r) = Return $ Return r
   loop (Effect m) = Effect $ fmap loop m
-  loop (Step (a :> rest)) = case pred a of
+  loop (Step (a :> rest)) = case p a of
     True  -> Step $ a :> loop rest
     False -> Return $ Step $ a :> rest
 {-# INLINABLE span #-}
@@ -2742,7 +2727,7 @@ fromList "2345"
 fromList "3456"
 
 -}
-slidingWindow :: forall a b m r. LMonad m
+slidingWindow :: forall a b m. LMonad m
               => Int -> Stream (LOf a) m b
               ⊸ Stream (LOf (Seq.Seq a)) m b
 slidingWindow n = setup (max 1 n :: Int) mempty
@@ -2759,9 +2744,9 @@ slidingWindow n = setup (max 1 n :: Int) mempty
     setup 0 !sequ str = do
        yield sequ
        window (Seq.drop 1 sequ) str
-    setup n sequ str = do
+    setup n' sequ str = do
       e <- lift $ next str
       case e of
         Left r -> yield sequ >> return r
-        Right (x,rest) -> setup (n-1) (sequ Seq.|> x) rest
+        Right (x,rest) -> setup (n'-1) (sequ Seq.|> x) rest
 {-#INLINABLE slidingWindow #-}

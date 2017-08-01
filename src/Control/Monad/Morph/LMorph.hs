@@ -1,7 +1,7 @@
-{-# LANGUAGE Trustworthy #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE ExplicitForAll #-}
 {-# LANGUAGE Rank2Types #-}
+
 module Control.Monad.Morph.LMorph (
   LMFunctor(..)
 ) where

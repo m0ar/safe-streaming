@@ -1,4 +1,4 @@
-{-#LANGUAGE RankNTypes, CPP, Trustworthy #-}
+{-#LANGUAGE RankNTypes, CPP #-}
 module Streaming
    (
    -- * An iterable streaming monad transformer
@@ -77,7 +77,6 @@ module Streaming
    MonadThrow(..),
    MonadResource(..),
    MonadBase(..),
-   ResourceT(..),
    runResourceT,
 #if MIN_VERSION_base(4,8,0)
    Bifunctor(..),

@@ -72,6 +72,10 @@ extra-deps:
 - primitive-0.6.2.0
 - HUnit-1.6.0.0
 
+ghc-options:
+  "*": -Wall
+  streaming-internal: -fnowarn-partial-type-signatures
+
 # Override default flag values for local packages and extra-deps
 flags: {}
 
