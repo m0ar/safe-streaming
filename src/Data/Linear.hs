@@ -36,3 +36,8 @@ getUnrestricted (Unrestricted a) = a
 ifThenElse :: Bool -> a -> a -> a
 ifThenElse b x y = bool y x b
 
+(++) :: [a] ⊸ [a] ⊸ [a]
+[] ++ as = as
+as ++ [] = as
+(x:xs) ++ ys = x:(xs ++ ys)
+
