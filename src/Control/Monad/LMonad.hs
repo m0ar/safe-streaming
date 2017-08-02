@@ -9,7 +9,7 @@ module Control.Monad.LMonad (
   join, ap
 ) where
 
-import Control.Applicative.LApplicative (LApplicative(..), pure, (*>))
+import Control.Applicative.LApplicative (LApplicative(..), pure)
 import Data.Functor.LFunctor
 import Prelude (error)
 import GHC.Base (String(), bindIO, returnIO)
@@ -17,6 +17,7 @@ import GHC.IO (failIO)
 import Data.Linear (id, (.))
 import System.IO (IO)
 import Data.Functor.Identity
+import Unsafe.Coerce
 
 infixl 1 >>, >>=
 
@@ -54,11 +55,10 @@ instance LApplicative IO where
   pure  = return
   (<*>) = ap
 
+-- All of the IO monad functions are already linear, so unsafeCoerce is fine
 instance LMonad IO where
-  {-# INLINE (>>)#-}
   {-# INLINE (>>=) #-}
-  return = returnIO
-  (>>)   = (*>)
-  (>>=) = bindIO
-  fail  = failIO
+  return = unsafeCoerce returnIO
+  (>>=) = unsafeCoerce bindIO
+  fail  = unsafeCoerce failIO
 
