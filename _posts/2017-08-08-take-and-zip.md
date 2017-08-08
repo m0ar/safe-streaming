@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Take & Zip — An issue with linearity
+title: Take & Zip — An issue with linear streams
 ---
 
 When adapting the `streaming` library for better type safety by leveraging
@@ -223,4 +223,5 @@ different lengths, and often simply don't know beforehand.
 
 
 That's it for today! Feel free to drop comments or questions at
-[reddit](placeholder), I'd love to hear other ideas on these issues.
+[reddit](https://www.reddit.com/r/haskell/comments/6sdwak/take_zip_an_issue_with_linear_streams/),
+I'd love to hear other ideas on these issues.
