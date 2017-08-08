@@ -14,7 +14,7 @@ and [linear monads](https://m0ar.github.io/safe-streaming/2017/07/20/homegrown-l
 if you are curious on why this is). Skipping the resulting stream _elements_
 is usually not an issue, and can be done neatly with unrestricted constructors
 in the stream functor
-([like so](https://github.com/m0ar/safe-streaming/blob/3b488017ab97537f5f78c5f50e64329fef413e4c/src/Data/Functor/LOf.hs#L16-L24),
+([like so](https://github.com/m0ar/safe-streaming/blob/3b488017ab97537f5f78c5f50e64329fef413e4c/src/Data/Functor/LOf.hs#L16-L24)),
 but we really need the dowstream _actions_ done! This unfortunately makes it
 tricky for the cases when we genuinely do not _want_ the rest of the values of
 the stream, as in the semantics of the core functions `take` and `zip`. Since
