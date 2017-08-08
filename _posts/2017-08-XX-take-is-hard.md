@@ -14,7 +14,7 @@ and [linear monads](https://m0ar.github.io/safe-streaming/2017/07/20/homegrown-l
 if you are curious on why this is). Skipping the resulting stream _elements_
 is usually not an issue, and can be done neatly with unrestricted constructors
 in the stream functor
-([like so](https://github.com/m0ar/safe-streaming/blob/master/src/Data/Functor/LOf.hs#L21)),
+([like so](https://github.com/m0ar/safe-streaming/blob/3b488017ab97537f5f78c5f50e64329fef413e4c/src/Data/Functor/LOf.hs#L16-L24),
 but we really need the dowstream _actions_ done! This unfortunately makes it
 tricky for the cases when we genuinely do not _want_ the rest of the values of
 the stream, as in the semantics of the core functions `take` and `zip`. Since
@@ -55,7 +55,7 @@ printInts k =
 {% endhighlight%}
 
 
-So should we constrain ourselves to unrestricted monads then? No, since this
+So should we constrain ourselves to unrestricted monads then? No, since that
 would severely restrict the possible streams and would make simple programs
 like this impossible:
 
@@ -77,28 +77,28 @@ userSmallNumbers = takeWhile ((<) 100) . read . stdinLn
 
 
 You can probably imagine how useful this pattern is, so not being able to
-`take` linear streams is indeed troubling. But couldn't we manage with its
-linear cousin `splitsAt`?
+`take` linear streams is indeed troubling. But couldn't we just use its
+linear cousin, `splitsAt`?
 
 {% highlight haskell %}
 splitsAt :: (Monad m, Functor f) => Int -> Stream f m r -> Stream f m (Stream f m r)
 {% endhighlight%}
 
-That can transform an infinite stream into a finite one, and let you snag what
-you want from the head, isn't that exactly what we need? Unfortunately no; as
+It transforms an infinite stream into a finite one, and lets you snag what
+you want from the head. Isn't that exactly what we need? Unfortunately no; as
 you can see in the type the linear end-of-stream value is another stream, the
 remainder of after splitting, and we need to consume this too!
 
-To really solve this problem with `take` we would need to create some
+To really solve the problem with `take` we would need to create some
 abstraction for destructible streams. This way we could know that the stream
-is fine with being cut early, since this is not true in the general case. As a
+is fine with being cut early, which is not true in the general case. As a
 first step, let us take a look at how we can destroy linear variables at all,
 since it sounds pretty weird.
 
 
 ### Destruction of linear values
-All of this would be fine if we could have a `destroy :: Stream f m r ⊸ ()`,
-but we will start by figuring out how we can destroy linear values of simpler
+Our problems would be solved if we could have a `destroy :: Stream f m r ⊸ ()`,
+but let's start by figuring out how we can destroy linear values of simpler
 types. Let's create a type class for _destructability_ of linear values, where
 each type can decide how you can consume its inhabitants (which really makes
 them _affine_):
@@ -150,18 +150,8 @@ data Int where Int# :: Int# -> Int
 instance Destructible Int where
   destroy (Int# _) = ()
 
-
--- This isn't really necessary to convey my point, but if you
--- want to try this GHC needs to understand that your Int is a
--- Num, or it'll haunt you in confusion over your literals:
-import GHC.Classes (compareInt#)
-instance Num Int where
-  (Int# x) + (Int# y) = Int# (x +# y)
-  (Int# x) * (Int# y) = Int# (x *# y)
-  negate (Int# x) = Int# (negateInt# x)
-  abs i@(Int# x) = if x `compareInt#` 0# == LT then negate i else i
-  signum (Int# x) = if x `compareInt#` 0# == LT then -1 else 1
-  fromInteger = Int# . (fromInteger :: Integer -> GHC.Types.Int)
+-- If you want to play with this in GHCi you need
+-- to use primitive literal syntax for your ints
 {% endhighlight%}
 
 
@@ -187,7 +177,7 @@ along these lines could be one way to enable `take` on streams:
 
 {% highlight haskell %}
 class AffineMonad m where
-  (>>=) :: Affine (m a) -o Affine (Affine a -o m b) -o m b
+  (>>=) :: Affine (m a) ⊸ Affine (Affine a ⊸ m b) ⊸ m b
 {% endhighlight %}
 
 This is just a sketch, but something like it could allow keeping the monadic
@@ -224,10 +214,10 @@ applicability of `zip` comes from this, so it is indeed an issue that we
 cannot implement it with linear streams.
 
 `zip` will remain tricky because it's locked until we can `take` properly,
-since it suffers from the same problems. An different approach all together
+since it suffers from the same problems. A different approach all together
 could include encoding the stream length in the types; this would be nice in
 the sense that we could define `zip` only on streams of equal length. On the
-other hand, this would probably not be very practical nor fit the programming
+other hand, it would probably not be very practical, nor fit the programming
 model particularly well since we often _leverage_ that streams are of
 different lengths, and often simply don't know beforehand.
 
