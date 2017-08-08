@@ -22,7 +22,7 @@ this is a common pattern in the programming model of streams, this indeed
 seems to be a big issue.
 
 
-## The problem with `take`
+## The problem with take
 We sometimes want to compute on a stream until we find an element fulfilling a
 predicate, only consider a subsequence of values then quit, or work with
 infinite streams (which often get cumbersome in absence of `take`-like
@@ -159,7 +159,7 @@ For more exotic types you might have to resort to using `unsafeCoerce` in
 different ways, which may bring its own problems.
 
 
-### Destruction of a `Stream`
+### Destruction of a stream
 Now we have seen how we can consume linear variables pretty smoothly which is
 neat and all, but the main problem still stands: the effects downstream could
 be doing critical stuff so we can't just skip them, and what _consumption_ of
@@ -195,7 +195,7 @@ would allow safely aborting a monad with shared resources, relying on
 
 
 
-## The problem with `zip`
+## The problem with zip
 `zip` is also interesting since the original implementation does two things
 that are illegal in the linear setting:
 
