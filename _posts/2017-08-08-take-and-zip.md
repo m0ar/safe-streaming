@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Take & Zip: An issue with linearity
+title: Take & Zip — An issue with linearity
 ---
 
 When adapting the `streaming` library for better type safety by leveraging
