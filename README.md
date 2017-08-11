@@ -78,11 +78,14 @@ from this project:
   [streaming](https://m0ar.github.io/safe-streaming/2017/06/13/what-are-streams-anyway.html)
   and [linear types and application in streaming](https://m0ar.github.io/safe-streaming/2017/06/19/linear-types-101.html)
 
-* A linear `Monad` class, together with meshing `Functor` and `Applicative`: [code](https://github.com/m0ar/safe-streaming/blob/master/src/Control/Monad/LMonad.hs), [explanatory blogpost](https://m0ar.github.io/safe-streaming/2017/07/20/homegrown-linear-monads.html)
+* A linear `Monad` class, together with meshing `Functor` and `Applicative`: [code](https://github.com/m0ar/safe-streaming/blob/master/src/Control/Monad/LMonad.hs), [explanatory blog post](https://m0ar.github.io/safe-streaming/2017/07/20/homegrown-linear-monads.html)
 
 * A linear State monad which can be parametrised with mixed-linearity state
-  types: [code](https://github.com/m0ar/safe-streaming/blob/master/src/Control/Monad/State/LState.hs)
-  *future blog post*
+  types: [well documented code](https://github.com/m0ar/safe-streaming/blob/master/src/Control/Monad/State/LState.hs)
+
+* Discovery of the steep price we had to pay in `streaming` to solve the repeatable effects issue: [blog post](https://m0ar.github.io/safe-streaming/2017/08/08/take-and-zip.html)
+
+* A summary of the discovered usability issues with linear Haskell: [blog post](https://m0ar.github.io/safe-streaming/2017/08/11/usability-implications-of-linearity.html)
 
 * A less-than-extensive [test suite](https://github.com/m0ar/safe-streaming/blob/master/test/Spec.hs)
   that at least provides a light demo on the linear state monad and a safe
