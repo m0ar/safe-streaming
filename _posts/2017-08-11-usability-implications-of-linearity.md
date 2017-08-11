@@ -12,6 +12,39 @@ annoying usability issues that have surfaced when working with linear types in a
 practical setting.
 
 
+## Broken flow control
+There are some issues with flow control when using the linear extension.
+Albeit a temporary problem, there is no linear `case` and `let` implemented
+yet. This means that even if you thread your things linearly through these
+constructs, they will lead to errors because the linearity checker sees you
+passing a linear variable to an unrestricted context:
+
+{% highlight haskell %}
+λ> let f :: a ⊸ a; f x = let y = x in y
+
+<interactive>:28:19: error:
+    • Couldn't match expected weight ‘1’ of variable ‘x’ with actual weight ‘ω’
+    • In an equation for ‘f’: f x = let y = x in y
+
+
+λ> data B = T Int | F Int
+λ> let f :: B ⊸ Int; f b = case b of T i -> i; F i -> i
+
+<interactive>:3:21: error:
+    • Couldn't match expected weight '1' of variable 'b' with actual weight 'ω'
+    • In an equation for 'f':
+          f b
+            = case b of
+                T i -> i
+                F i -> i
+{% endhighlight%}
+
+Both these examples _should_ work, and linear versions of both `case` and
+`let` will indeed be implemented later. For now, one can work around these
+hurdles through adding where-functions and doing the `case` logic through
+pattern matching there.
+
+
 ## Mixing monad classes
 So, this `-XRebindableSyntax` thing made using a redefined monad a real hoot.
 Until you need to mix them in the same module... Then you end up with
@@ -22,10 +55,12 @@ the linearity of _everything_, but only in parts of your code. When
 `do`-notation only works for one of your monads, you have a few choices:
 
 
-* Figure out which code will be simpler to express with the monadic operators,
-  write one with qualified infix operators and pattern matching lambdas. Then
-  you realise this wasn't all that easy, so you decide to change your mind and
-  rewrite everything but use `do`-notation for the _other_ monad.
+* Figure out which of your monads you need to write the simplest code for,
+  then write that without `do`-notation using qualified infix monadic
+  operators in a sea of lambdas. This only to realise that is was more complex
+  than expected, so you change your mind and have to rewrite _that_ in
+  `do`-notation and change the _other_ code to qualified infix riddled
+  spaghetti.
 
 * Split up a logically sound module into two separate ones, one for linear
   code and one for unrestricted. Then you get screwed over by recursive
@@ -124,50 +159,20 @@ multiplicity polymorphism requires a lot more work, and will likely not happen
 before the monomorphic linear types are merged.
 
 
+## If-Then-Else
+The arguaby nastiest issue is related to the `if-then-else` construct, and
+is much worse way than `case` and `let`. The core syntax _is_ implemented
+linearly, but clashes with `-XRebindableSyntax`; as soon as this extension is
+activated, the internal `if-then-else` goes out of scope and you have to
+provide a function `ifThenElse :: a -> b -> c -> d` yourself.
 
-## Broken flow control
-There are some issues with flow control when using the linear
-extension. Albeit a temporary problem, there is no linear `case` and `let`
-implemented yet. This means that even if you thread your things linearly
-through these constructs, they will lead to errors because the linearity
-checker sees you passing a linear variable to an unrestricted context:
-
-{% highlight haskell %}
-λ> let f :: a ⊸ a; f x = let y = x in y
-
-<interactive>:28:19: error:
-    • Couldn't match expected weight ‘1’ of variable ‘x’ with actual weight ‘ω’
-    • In an equation for ‘f’: f x = let y = x in y
-
-
-λ> data B = T Int | F Int
-λ> let f :: B ⊸ Int; f b = case b of T i -> i; F i -> i
-
-<interactive>:3:21: error:
-    • Couldn't match expected weight '1' of variable 'b' with actual weight 'ω'
-    • In an equation for 'f':
-          f b
-            = case b of
-                T i -> i
-                F i -> i
-{% endhighlight%}
-
-Both these examples _should_ work, and linear versions of both `case` and
-`let` will indeed be implemented later. For now, one can work around these
-hurdles through adding where-functions and doing the `case` logic through
-pattern matching there.
-
-
-### If-then-else
-A separate flow control issue is the `if-then-else` construct. The core syntax
-_is_ implemented linearly, but clashes with `-XRebindableSyntax`; as soon as
-this extension is activated, the internal `if-then-else` goes out of scope and
-you have to provide a function `ifThenElse :: a -> b -> c -> d` yourself. This
-is clearly fully unrestricted and _cannot_ be used to implement a linear
-`if-then-else`.  The consequence of this is that merely by activating a
-compiler extension, previously legitimate code ceases to be able to compile,
-which is *very* bad.  Unfortunately, there is _no way_ to fix this with
-library functions, so it would need to be patched in GHC.
+This is clearly fully unrestricted and _cannot_ be used to implement a linear
+`if-then-else`, what ever you do you cannot satisfy the linearity checker. The
+consequence of this is that merely by activating a compiler extension,
+previously legitimate code ceases to be able to compile, which is *very* bad
+since we straight up lose well-typed code by activating an extension.
+Unfortunately there is _no way_ to fix this with library functions, so it
+would need to be patched in GHC.
 
 
 Thanks for reading, feel free to drop a comment in the [reddit discussion
