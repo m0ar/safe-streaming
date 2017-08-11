@@ -204,4 +204,4 @@ the regular, less constrained `ifThenElse`.
 
 
 Thanks for reading! Feel free to drop a comment in the [reddit discussion
-thread](placeholderlink)!
+thread](https://www.reddit.com/r/haskell/comments/6t1zp1/usability_issues_with_linear_haskell_soh/)!
